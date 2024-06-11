@@ -1,0 +1,178 @@
+[
+    {
+        "id": "2fcf5d2e4360557a",
+        "type": "inject",
+        "z": "defcf8ff528868a9",
+        "name": "Hide column 'age'",
+        "props": [],
+        "repeat": "",
+        "crontab": "",
+        "once": false,
+        "onceDelay": 0.1,
+        "topic": "",
+        "x": 600,
+        "y": 60,
+        "wires": [
+            [
+                "48e83ab0b248301e"
+            ]
+        ]
+    },
+    {
+        "id": "5e7e2e013eb3f139",
+        "type": "inject",
+        "z": "defcf8ff528868a9",
+        "name": "Show column 'age'",
+        "props": [],
+        "repeat": "",
+        "crontab": "",
+        "once": false,
+        "onceDelay": 0.1,
+        "topic": "",
+        "x": 590,
+        "y": 100,
+        "wires": [
+            [
+                "14a24afc56eba05e"
+            ]
+        ]
+    },
+    {
+        "id": "14a24afc56eba05e",
+        "type": "function",
+        "z": "defcf8ff528868a9",
+        "name": "function 79",
+        "func": "msg.tbCmd = \"showColumn\";\nmsg.tbArgs = [\"age\"];\nreturn msg; \n",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 715,
+        "y": 100,
+        "wires": [
+            [
+                "2fc5f00455409d3f"
+            ]
+        ],
+        "l": false
+    },
+    {
+        "id": "48e83ab0b248301e",
+        "type": "function",
+        "z": "defcf8ff528868a9",
+        "name": "function 78",
+        "func": "msg.tbCmd = \"hideColumn\";\nmsg.tbArgs = [\"age\"];\nreturn msg;",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 715,
+        "y": 60,
+        "wires": [
+            [
+                "2fc5f00455409d3f"
+            ]
+        ],
+        "l": false
+    },
+    {
+        "id": "2fc5f00455409d3f",
+        "type": "ui-tabulator",
+        "z": "defcf8ff528868a9",
+        "name": "",
+        "group": "0efc2a826c4c4c0f",
+        "initObj": "{\n   \"height\": 200,\n   \"layout\": \"fitColumns\",\n   \"columns\": [\n      {\"field\":\"id\",\"visible\":false},\n      {\"title\":\"Name\",\"field\":\"name\",\"width\":200,\"hozAlign\":\"left\"},\n      {\"title\":\"Age\",\"field\":\"age\",\"width\": 100,\"hozAlign\":\"center\"}\n   ],\n   \"data\": [\n      {\"id\":1,\"name\":\"John Brown\", \"age\":30},\n      {\"id\":2,\"name\":\"Betty Clark\", \"age\":25}\n   ]\n}",
+        "events": "",
+        "order": 0,
+        "multiUser": false,
+        "themeFile": "",
+        "cssClass": "",
+        "passthru": false,
+        "width": 0,
+        "height": 0,
+        "x": 830,
+        "y": 80,
+        "wires": [
+            [
+                "8d83299b3002f754"
+            ]
+        ]
+    },
+    {
+        "id": "8d83299b3002f754",
+        "type": "debug",
+        "z": "defcf8ff528868a9",
+        "name": "debug 100",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "true",
+        "targetType": "full",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 990,
+        "y": 80,
+        "wires": []
+    },
+    {
+        "id": "0efc2a826c4c4c0f",
+        "type": "ui-group",
+        "name": "Ben",
+        "page": "a41328473f92394c",
+        "width": "5",
+        "height": "1",
+        "order": -1,
+        "showTitle": false,
+        "className": "",
+        "visible": "true",
+        "disabled": "false"
+    },
+    {
+        "id": "a41328473f92394c",
+        "type": "ui-page",
+        "name": "ben",
+        "ui": "b7fd8a2cce8052cc",
+        "path": "/ben",
+        "icon": "home",
+        "layout": "grid",
+        "theme": "b7b1935fbb33bbc8",
+        "order": 1,
+        "className": "",
+        "visible": "true",
+        "disabled": "false"
+    },
+    {
+        "id": "b7fd8a2cce8052cc",
+        "type": "ui-base",
+        "name": "ui1",
+        "path": "/dashboard",
+        "includeClientData": true,
+        "acceptsClientConfig": [
+            "ui-control",
+            "ui-notification"
+        ]
+    },
+    {
+        "id": "b7b1935fbb33bbc8",
+        "type": "ui-theme",
+        "name": "def theme",
+        "colors": {
+            "surface": "#ffffff",
+            "primary": "#0094ce",
+            "bgPage": "#eeeeee",
+            "groupBg": "#ffffff",
+            "groupOutline": "#cccccc"
+        },
+        "sizes": {
+            "pagePadding": "12px",
+            "groupGap": "12px",
+            "groupBorderRadius": "4px",
+            "widgetGap": "12px"
+        }
+    }
+]

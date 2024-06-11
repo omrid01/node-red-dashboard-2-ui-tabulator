@@ -1,0 +1,11 @@
+Scenarios for "Show Datastore" (send custom event)
+
+1. no clients => none (ok, since command goes through client)
+
+2. 1 client
+  - deploy or restart flows while client open - server node recreated, datastore retained, cmd OK
+  - restart server process while client open - server node created, cmd OK
+
+3. multiple clients
+  - deploy or restart flows while clients open - server node recreated, datastore retained, cmd OK for all but one client
+  - restart server process while clients open - server node created, cmd OK for all clients
