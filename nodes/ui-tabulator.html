@@ -1,0 +1,186 @@
+<script type="text/javascript">
+
+const sampleTblConfig = `{
+   "height": 200,
+   "layout": "fitColumns",
+   "columns": [
+      {"field":"id","visible":false},
+      {"title":"Name","field":"name","width":200,"hozAlign":"left"},
+      {"title":"Age","field":"age","width": 100,"hozAlign":"center"}
+   ],
+   "data": [
+      {"id":1,"name":"John Brown", "age":30},
+      {"id":2,"name":"Betty Clark", "age":25}
+   ]
+}`;
+
+    RED.nodes.registerType('ui-tabulator', {
+        category: RED._('@flowfuse/node-red-dashboard/ui-base:ui-base.label.category'),
+        color: RED._('@flowfuse/node-red-dashboard/ui-base:ui-base.colors.dark'),
+        defaults: {
+            name: { value: "" },
+            group: { type: 'ui-group', required: true },
+			initObj: {value:sampleTblConfig, validate: function (v) {return (isValidJSON(v) === "")}},
+			events: { value: "" },
+            order: { value: 0 },
+			multiUser:{ value: false },
+//			reloadOnRefresh:{ value: false },
+			themeCSS: { value: "" },	// placeholder for initial load of theme file CSS
+			themeFile: { value: "" },
+//            cssClass: { value: '' },
+//			tblId:{ value: "", validate: function (v) {return (v.trim() === "" || v.match(/^[a-zA-Z_-][a-zA-Z0-9_-]*$/) !== null)} },
+			passthru: { value: false },
+			printToLog: { value: false },	// Tells client if to print console log messages
+            width: {
+                value: 0,
+                validate: function (v) {
+                    const width = v || 0
+                    const currentGroup = $('#node-input-group').val() || this.group
+                    const groupNode = RED.nodes.node(currentGroup)
+                    const valid = !groupNode || +width <= +groupNode.width
+                    $('#node-input-size').toggleClass('input-error', !valid)
+                    return valid
+                }
+            },
+            height: { value: 0 }
+        },
+        inputs: 1,
+        outputs: 1,
+        icon: "font-awesome/fa-table",
+        label: function() {
+            return this.name || "ui-tabulator";
+        },
+        oneditprepare: function () {
+
+            $('#node-input-size').elementSizer({
+                width: '#node-input-width',
+                height: '#node-input-height',
+                group: '#node-input-group'
+            });
+
+			var $editorScope = this;
+			this.editor = RED.editor.createEditor({
+				id: 'node-input-initObj-editor',
+				mode: 'ace/mode/json',
+				//theme:"ace/theme/tomorrow",
+				value: this.initObj
+			});
+			$("#node-input-check").on("click", function(evt)
+			{
+				let jsonStr = $editorScope.editor.getValue().trim();
+				let txt = isValidJSON(jsonStr);
+				if (txt === "")
+					alert("JSON syntax is valid");
+				else
+					alert(txt);	
+			});
+			$("#node-input-formatJson").on("click", function(evt)
+			{
+				let jsonStr = $editorScope.editor.getValue().trim();
+				let txt = isValidJSON(jsonStr);
+				if (txt === "")
+				{
+					let obj = JSON.parse(jsonStr);
+					$editorScope.editor.setValue(JSON.stringify(obj, null, '\t'),-1);
+					$editorScope.editor.clearSelection();
+				}
+				else
+					alert(txt);	
+			});
+        },
+        oneditsave: function() {
+          this.initObj = this.editor.getValue()
+          this.editor.destroy()
+          delete this.editor
+        },
+        oneditcancel: function() {
+          this.editor.destroy()
+          delete this.editor
+        }
+    });
+
+// My functions
+//-------------
+function isValidJSON(str)
+{
+	if (!str.trim())
+		return "";
+	try	{
+		let obj = JSON.parse(str);
+		return "";
+	}
+	catch (err)	{
+		return "Syntax error: "+err.message;
+	}
+}
+</script>
+
+<script type="text/html" data-template-name="ui-tabulator">
+    <div class="form-row">
+        <label for="node-input-name"><i class="fa fa-tag"></i> Name</label>
+        <input type="text" id="node-input-name" placeholder="Name">
+    </div>
+    <div class="form-row">
+        <label for="node-input-group"><i class="fa fa-table"></i> Group</label>
+        <input type="text" id="node-input-group">
+    </div>
+    <div class="form-row">
+        <label><i class="fa fa-object-group"></i> <span data-i18n="ui-tabulator.label.size"></label>
+        <input type="hidden" id="node-input-width">
+        <input type="hidden" id="node-input-height">
+        <button class="editor-button" id="node-input-size"></button>
+    </div>
+	<div class="Notes">Initial Table Configuration</div>
+	<div class="form-row" id="textField">
+		<!-- <label for="node-input-initObj-editor"> Table Configuration</label> -->
+		<div style="height: 350px; min-height:150px;" class="node-text-editor" id="node-input-initObj-editor"></div>
+	</div>
+    <div class="form-row">
+        <button type="button" id="node-input-check" class="red-ui-button">Check Syntax</button>
+        <button type="button" id="node-input-formatJson" class="red-ui-button">Format JSON</button>
+    </div>
+	<div class="form-row">
+        <label for="node-input-events"><i class="fa fa-tag"></i> Notifications</label>
+        <input type="text" id="node-input-events" placeholder="Comma-separated string">
+    </div>
+    <div>
+        <input type="checkbox" style="vertical-align:top;" id="node-input-multiUser"/>&nbsp
+		<label style="display:inline-block" for="node-input-multiUser">Multi-user mode</label>
+    </div>
+	<br>
+<!--
+    <div>
+        <input type="checkbox" style="vertical-align:top;" id="node-input-reloadOnRefresh"/>&nbsp
+		<label style="display:inline-block" for="node-input-reloadOnRefresh">Reload data on refresh</label>
+    </div>
+	<div class="form-row">
+        <label for="node-input-theme"><i class="fa fa-list"></i> Theme</label>
+		<select id="node-input-theme">
+			<option value='default'> Default</option>
+			<option value='midnight'> Midnight</option>
+			<option value='simple'> Simple</option>
+			<option value='modern'> Modern</option>
+			<option value='site_dark'> Site Dark</option>
+			<option value='site'> Site</option>
+		</select>
+    </div>
+-->
+    <div class="form-row">
+        <label for="node-input-themeFile"><i class="fa fa-file"></i> Theme File</label>
+        <input type="text" id="node-input-themeFile"  placeholder="File name or URL of Tabulator theme CSS file">
+    </div>
+<!--
+    <div class="form-row">
+        <label for="node-input-cssClass"><i class="fa fa-code"></i> CSS Class</label>
+        <input type="text" id="node-input-cssClass" disabled placeholder="**under development**">   < !-- Class name(s) (comma-separated string)"> -- >
+    </div>
+	<div class="form-row">
+        <label for="node-input-tblId"><i class="fa fa-tag"></i> Table Id<br>(Optional)</label>
+        <input type="text" id="node-input-tblId">
+    </div>
+-->
+    <div>
+        <input type="checkbox" style="vertical-align:top;" id="node-input-passthru"/>&nbsp
+		<label style="display:inline-block" for="node-input-passthru">Pass through messages from input</label>
+    </div>
+</script>

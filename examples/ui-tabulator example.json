@@ -1,0 +1,1227 @@
+[
+    {
+        "id": "defcf8ff528868a9",
+        "type": "tab",
+        "label": "ui-tabulator examples",
+        "disabled": false,
+        "info": "",
+        "env": []
+    },
+    {
+        "id": "d2af47e17887c1db",
+        "type": "group",
+        "z": "defcf8ff528868a9",
+        "name": "Testing",
+        "style": {
+            "label": true
+        },
+        "nodes": [
+            "f5cd7ea71869293b",
+            "7bfbc3bdb59c1514",
+            "81390a50f1f63b64"
+        ],
+        "x": 594,
+        "y": 659,
+        "w": 302,
+        "h": 122
+    },
+    {
+        "id": "76e9b47d9b1ca7fd",
+        "type": "group",
+        "z": "defcf8ff528868a9",
+        "name": "Table Appearance",
+        "style": {
+            "label": true
+        },
+        "nodes": [
+            "45dd2e2e1daafefe",
+            "6bb6082c330626bb",
+            "a04153d44662034d",
+            "abd2eda2d3d71162",
+            "2fcf5d2e4360557a",
+            "4b83b9c9251019f8",
+            "a4532981bbc16849",
+            "d2f553d687cb57ba",
+            "7b3e555552b35062"
+        ],
+        "x": 454,
+        "y": 239,
+        "w": 452,
+        "h": 302
+    },
+    {
+        "id": "ccac38d9c099129d",
+        "type": "group",
+        "z": "defcf8ff528868a9",
+        "name": "Table Management",
+        "style": {
+            "label": true
+        },
+        "nodes": [
+            "117733e26ba7a1a0",
+            "13031aa90a264db7",
+            "c963124b97b427d1",
+            "7fdaf376a44b8d49",
+            "9e18bd8b47c97773",
+            "2cdfb8c12b389941",
+            "724572d32d81d2e6"
+        ],
+        "x": 14,
+        "y": 19,
+        "w": 392,
+        "h": 202
+    },
+    {
+        "id": "1117663602763c33",
+        "type": "group",
+        "z": "defcf8ff528868a9",
+        "name": "Query data",
+        "style": {
+            "label": true
+        },
+        "nodes": [
+            "19fbb32243768334",
+            "59d9d552d9190c1d",
+            "a13b0f277c69cf95",
+            "ff7cad257a40a0e9",
+            "d040291ed84db657"
+        ],
+        "x": 14,
+        "y": 239,
+        "w": 342,
+        "h": 202
+    },
+    {
+        "id": "5b19349a798b25c8",
+        "type": "group",
+        "z": "defcf8ff528868a9",
+        "style": {
+            "stroke": "#999999",
+            "stroke-opacity": "1",
+            "fill": "none",
+            "fill-opacity": "1",
+            "label": true,
+            "label-position": "nw",
+            "color": "#a4a4a4"
+        },
+        "nodes": [
+            "493c9986920ec2d2",
+            "20bfc0f8799a929b",
+            "4f7f96107351e62a",
+            "ebf128a3b696ce43"
+        ],
+        "x": 564,
+        "y": 39,
+        "w": 352,
+        "h": 142
+    },
+    {
+        "id": "1327d7698de96e7c",
+        "type": "group",
+        "z": "defcf8ff528868a9",
+        "name": "Set Data",
+        "style": {
+            "label": true
+        },
+        "nodes": [
+            "4603b7ff40b286d2",
+            "a2e175f8ccc124dc",
+            "a42079590f9f7de7",
+            "2521136fd425025d",
+            "a253d321a86c5a1c",
+            "addf7765bde79edc",
+            "1fa6283821e966fb",
+            "c86666683436d68a",
+            "5afc770e33a1f998",
+            "0ec1989a28a1c6cc",
+            "942a7f85d21cd6b3"
+        ],
+        "x": 14,
+        "y": 459,
+        "w": 392,
+        "h": 322
+    },
+    {
+        "id": "493c9986920ec2d2",
+        "type": "debug",
+        "z": "defcf8ff528868a9",
+        "g": "5b19349a798b25c8",
+        "name": "debug 97",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "true",
+        "targetType": "full",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 855,
+        "y": 140,
+        "wires": [],
+        "l": false
+    },
+    {
+        "id": "117733e26ba7a1a0",
+        "type": "inject",
+        "z": "defcf8ff528868a9",
+        "g": "ccac38d9c099129d",
+        "name": "Create Table",
+        "props": [],
+        "repeat": "",
+        "crontab": "",
+        "once": false,
+        "onceDelay": 0.1,
+        "topic": "",
+        "x": 130,
+        "y": 60,
+        "wires": [
+            [
+                "13031aa90a264db7"
+            ]
+        ]
+    },
+    {
+        "id": "13031aa90a264db7",
+        "type": "function",
+        "z": "defcf8ff528868a9",
+        "g": "ccac38d9c099129d",
+        "name": "function 64",
+        "func": "msg.tbCmd = \"tbCreateTable\";\nmsg.tbInitObj = {\n\theight:200,\n\tdata:[\n\t\t{id:1,text:\"Line 1\"},\n\t\t{id:2,text:\"Line 2\"},\n\t\t{id:3,text:\"Line 3\"}\n\t],\n\tcolumns:[\n\t\t{title:\"Id\",field:\"id\",width:50,hozAlign:\"center\"},\n\t\t{title:\"Text\",field:\"text\",width:200,hozAlign:\"left\",editor:\"input\"}\n\t]\n}\n\nreturn msg;",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 255,
+        "y": 60,
+        "wires": [
+            [
+                "9e18bd8b47c97773"
+            ]
+        ],
+        "l": false
+    },
+    {
+        "id": "4603b7ff40b286d2",
+        "type": "inject",
+        "z": "defcf8ff528868a9",
+        "g": "1327d7698de96e7c",
+        "name": "Update Data",
+        "props": [
+            {
+                "p": "tbCmd",
+                "v": "updateData",
+                "vt": "str"
+            }
+        ],
+        "repeat": "",
+        "crontab": "",
+        "once": false,
+        "onceDelay": 0.1,
+        "topic": "",
+        "x": 130,
+        "y": 540,
+        "wires": [
+            [
+                "5afc770e33a1f998"
+            ]
+        ]
+    },
+    {
+        "id": "19fbb32243768334",
+        "type": "inject",
+        "z": "defcf8ff528868a9",
+        "g": "1117663602763c33",
+        "name": "Get Data",
+        "props": [
+            {
+                "p": "tbCmd",
+                "v": "getData",
+                "vt": "str"
+            },
+            {
+                "p": "tbArgs",
+                "v": "[\"active\"]",
+                "vt": "jsonata"
+            }
+        ],
+        "repeat": "",
+        "crontab": "",
+        "once": false,
+        "onceDelay": 0.1,
+        "topic": "",
+        "x": 120,
+        "y": 280,
+        "wires": [
+            [
+                "a13b0f277c69cf95"
+            ]
+        ]
+    },
+    {
+        "id": "c963124b97b427d1",
+        "type": "inject",
+        "z": "defcf8ff528868a9",
+        "g": "ccac38d9c099129d",
+        "name": "Destroy Table",
+        "props": [
+            {
+                "p": "tbCmd",
+                "v": "destroy",
+                "vt": "str"
+            }
+        ],
+        "repeat": "",
+        "crontab": "",
+        "once": false,
+        "onceDelay": 0.1,
+        "topic": "",
+        "x": 130,
+        "y": 100,
+        "wires": [
+            [
+                "9e18bd8b47c97773"
+            ]
+        ]
+    },
+    {
+        "id": "59d9d552d9190c1d",
+        "type": "inject",
+        "z": "defcf8ff528868a9",
+        "g": "1117663602763c33",
+        "name": "Search Data",
+        "props": [
+            {
+                "p": "tbCmd",
+                "v": "searchData",
+                "vt": "str"
+            },
+            {
+                "p": "tbArgs",
+                "v": "[\"id\", \">\", 1]",
+                "vt": "jsonata"
+            }
+        ],
+        "repeat": "",
+        "crontab": "",
+        "once": false,
+        "onceDelay": 0.1,
+        "topic": "",
+        "x": 130,
+        "y": 400,
+        "wires": [
+            [
+                "a13b0f277c69cf95"
+            ]
+        ]
+    },
+    {
+        "id": "45dd2e2e1daafefe",
+        "type": "inject",
+        "z": "defcf8ff528868a9",
+        "g": "76e9b47d9b1ca7fd",
+        "name": "Set row background color",
+        "props": [
+            {
+                "p": "tbCmd",
+                "v": "tbSetStyle",
+                "vt": "str"
+            },
+            {
+                "p": "rowId",
+                "v": "2",
+                "vt": "str"
+            },
+            {
+                "p": "color",
+                "v": "cyan",
+                "vt": "str"
+            }
+        ],
+        "repeat": "",
+        "crontab": "",
+        "once": false,
+        "onceDelay": 0.1,
+        "topic": "",
+        "x": 610,
+        "y": 360,
+        "wires": [
+            [
+                "6bb6082c330626bb"
+            ]
+        ]
+    },
+    {
+        "id": "a2e175f8ccc124dc",
+        "type": "inject",
+        "z": "defcf8ff528868a9",
+        "g": "1327d7698de96e7c",
+        "name": "Clear Data",
+        "props": [
+            {
+                "p": "tbCmd",
+                "v": "clearData",
+                "vt": "str"
+            }
+        ],
+        "repeat": "",
+        "crontab": "",
+        "once": false,
+        "onceDelay": 0.1,
+        "topic": "",
+        "x": 120,
+        "y": 740,
+        "wires": [
+            [
+                "c86666683436d68a"
+            ]
+        ]
+    },
+    {
+        "id": "f5cd7ea71869293b",
+        "type": "inject",
+        "z": "defcf8ff528868a9",
+        "g": "d2af47e17887c1db",
+        "name": "Show Datastore",
+        "props": [
+            {
+                "p": "tbCmd",
+                "v": "tbShowDatastore",
+                "vt": "str"
+            },
+            {
+                "p": "sendMsg",
+                "v": "true",
+                "vt": "bool"
+            }
+        ],
+        "repeat": "",
+        "crontab": "",
+        "once": false,
+        "onceDelay": 0.1,
+        "topic": "",
+        "x": 720,
+        "y": 700,
+        "wires": [
+            [
+                "81390a50f1f63b64"
+            ]
+        ]
+    },
+    {
+        "id": "6bb6082c330626bb",
+        "type": "function",
+        "z": "defcf8ff528868a9",
+        "g": "76e9b47d9b1ca7fd",
+        "name": "",
+        "func": "msg.tbScope = {rowId:msg.rowId,field: msg.field};\nmsg.tbStyles = {\n    backgroundColor:msg.color\n};\nreturn msg;",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 765,
+        "y": 380,
+        "wires": [
+            [
+                "abd2eda2d3d71162"
+            ]
+        ],
+        "l": false
+    },
+    {
+        "id": "a04153d44662034d",
+        "type": "inject",
+        "z": "defcf8ff528868a9",
+        "g": "76e9b47d9b1ca7fd",
+        "name": "Set cell text color",
+        "props": [
+            {
+                "p": "tbCmd",
+                "v": "tbSetStyle",
+                "vt": "str"
+            },
+            {
+                "p": "rowId",
+                "v": "2",
+                "vt": "num"
+            },
+            {
+                "p": "field",
+                "v": "age",
+                "vt": "str"
+            },
+            {
+                "p": "color",
+                "v": "red",
+                "vt": "str"
+            }
+        ],
+        "repeat": "",
+        "crontab": "",
+        "once": false,
+        "onceDelay": 0.1,
+        "topic": "",
+        "x": 580,
+        "y": 280,
+        "wires": [
+            [
+                "7b3e555552b35062"
+            ]
+        ]
+    },
+    {
+        "id": "abd2eda2d3d71162",
+        "type": "link out",
+        "z": "defcf8ff528868a9",
+        "g": "76e9b47d9b1ca7fd",
+        "name": "link out 69",
+        "mode": "link",
+        "links": [
+            "20bfc0f8799a929b"
+        ],
+        "x": 865,
+        "y": 420,
+        "wires": []
+    },
+    {
+        "id": "20bfc0f8799a929b",
+        "type": "link in",
+        "z": "defcf8ff528868a9",
+        "g": "5b19349a798b25c8",
+        "name": "Link-in Table 1",
+        "links": [
+            "abd2eda2d3d71162",
+            "9e18bd8b47c97773",
+            "a13b0f277c69cf95",
+            "81390a50f1f63b64",
+            "c86666683436d68a",
+            "b802b09e9cb11a8e"
+        ],
+        "x": 605,
+        "y": 140,
+        "wires": [
+            [
+                "ebf128a3b696ce43"
+            ]
+        ]
+    },
+    {
+        "id": "4f7f96107351e62a",
+        "type": "ui-template",
+        "z": "defcf8ff528868a9",
+        "g": "5b19349a798b25c8",
+        "group": "",
+        "page": "59f7c83cfe44c342",
+        "ui": "",
+        "name": "Table CSS Styles",
+        "order": 0,
+        "width": 0,
+        "height": 0,
+        "head": "",
+        "format": "/*\n.tabulator-table .tabulator-cell {\n  font-family: \"Lucida Console\", \"Courier New\", monospace;\n  color: #CC3A82;\n  font-weight: bold;\n}\n*/\n",
+        "storeOutMessages": true,
+        "passthru": false,
+        "resendOnRefresh": true,
+        "templateScope": "page:style",
+        "className": "",
+        "x": 770,
+        "y": 80,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "ebf128a3b696ce43",
+        "type": "ui-tabulator",
+        "z": "defcf8ff528868a9",
+        "g": "5b19349a798b25c8",
+        "name": "Table-1",
+        "group": "ec59cdcab7e75298",
+        "initObj": "{\n\t\"height\": 200,\n\t\"selectableRows\": true,\n\t\"data\": [\n\t\t{\n\t\t\t\"id\": 1,\n\t\t\t\"fname\": \"John\",\n\t\t\t\"lname\": \"Smith\",\n\t\t\t\"age\": 25,\n\t\t\t\"gender\": \"Male \",\n\t\t\t\"clr\": 3,\n\t\t\t\"notes\": \"A jolly good fellow\"\n\t\t},\n\t\t{\n\t\t\t\"id\": 2,\n\t\t\t\"fname\": \"Jack\",\n\t\t\t\"lname\": \"Brown\",\n\t\t\t\"gender\": \"Male \",\n\t\t\t\"age\": 32,\n\t\t\t\"clr\": 4,\n\t\t\t\"notes\": \"Just an ordinary guy\"\n\t\t},\n\t\t{\n\t\t\t\"id\": 3,\n\t\t\t\"fname\": \"Jill\",\n\t\t\t\"lname\": \"Baker\",\n\t\t\t\"gender\": \"Female\",\n\t\t\t\"age\": 21,\n\t\t\t\"clr\": 5,\n\t\t\t\"notes\": \"She's the best\"\n\t\t}\n\t],\n\t\"columns\": [\n        {\"formatter\":\"rowSelection\",\"titleFormatter\":\"rowSelection\",\"width\": 40,\"hozAlign\":\"center\",\"headerSort\":false},\n\t\t{\n\t\t\t\"title\": \"Id\",\n\t\t\t\"field\": \"id\",\n\t\t\t\"width\": 50,\n\t\t\t\"hozAlign\": \"center\"\n\t\t},\n\t\t{\n\t\t\t\"title\": \"First Name\",\n\t\t\t\"field\": \"fname\",\n\t\t\t\"width\": 120,\n\t\t\t\"hozAlign\": \"left\",\n\t\t\t\"headerFilter\": \"input\",\n\t\t\t\"headerFilterPlaceholder\": \"Filter...\"\n\t\t},\n\t\t{\n\t\t\t\"title\": \"Last Name\",\n\t\t\t\"field\": \"lname\",\n\t\t\t\"width\": 120,\n\t\t\t\"hozAlign\": \"left\",\n\t\t\t\"headerFilter\": \"input\",\n\t\t\t\"headerFilterPlaceholder\": \"Filter...\"\n\t\t},\n\t\t{\n\t\t\t\"title\": \"Gender\",\n\t\t\t\"field\": \"gender\",\n\t\t\t\"width\": 100,\n\t\t\t\"hozAlign\": \"center\",\n\t\t\t\"editor\": \"list\",\n\t\t\t\"editorParams\": {\n\t\t\t\t\"values\": {\n\t\t\t\t\t\"Male \": \"Male \",\n\t\t\t\t\t\"Female\": \"Female\",\n\t\t\t\t\t\"Unknown\": \"Unknown\"\n\t\t\t\t}\n\t\t\t},\n\t\t\t\"headerFilter\": true,\n\t\t\t\"headerFilterPlaceholder\": \"Select...\",\n\t\t\t\"headerFilterParams\": {\n\t\t\t\t\"values\": {\n\t\t\t\t\t\"Male \": \"Male \",\n\t\t\t\t\t\"Female\": \"Female\",\n\t\t\t\t\t\"Unknown\": \"Unknown\",\n\t\t\t\t\t\"\": \"\"\n\t\t\t\t}\n\t\t\t}\n\n\t\t},\n\t\t{\n\t\t\t\"title\": \"Age\",\n\t\t\t\"field\": \"age\",\n\t\t\t\"width\": 80,\n\t\t\t\"hozAlign\": \"center\"\n\t\t},\n\t\t{\n\t\t\t\"field\": \"clr\",\n\t\t\t\"width\": 20,\n\t\t\t\"hozAlign\": \"center\",\n\t\t\t\"formatter\": \"traffic\",\n\t\t\t\"formatterParams\": {\n\t\t\t\t\"min\": 0,\n\t\t\t\t\"max\": 6,\n\t\t\t\t\"color\": [\n\t\t\t\t\t\"\",\n\t\t\t\t\t\"gray\",\n\t\t\t\t\t\"orange\",\n\t\t\t\t\t\"blue\",\n\t\t\t\t\t\"green\",\n\t\t\t\t\t\"red\",\n\t\t\t\t\t\"cyan\"\n\t\t\t\t]\n\t\t\t}\n\t\t},\n\t\t{\n\t\t\t\"title\": \"Notes\",\n\t\t\t\"field\": \"notes\",\n\t\t\t\"width\": 200,\n\t\t\t\"hozAlign\": \"left\",\n\t\t\t\"editor\": \"input\"\n\t\t}\n\t]\n}",
+        "events": "cellEdited,rowDblClick",
+        "order": 2,
+        "multiUser": false,
+        "themeFile": "@CSS:tabulator_midnight.min.css",
+        "passthru": false,
+        "width": "4",
+        "height": "3",
+        "x": 740,
+        "y": 140,
+        "wires": [
+            [
+                "493c9986920ec2d2"
+            ]
+        ]
+    },
+    {
+        "id": "2fcf5d2e4360557a",
+        "type": "inject",
+        "z": "defcf8ff528868a9",
+        "g": "76e9b47d9b1ca7fd",
+        "name": "Hide column",
+        "props": [
+            {
+                "p": "tbCmd",
+                "v": "hideColumn",
+                "vt": "str"
+            },
+            {
+                "p": "tbArgs",
+                "v": "[\"age\"]",
+                "vt": "jsonata"
+            }
+        ],
+        "repeat": "",
+        "crontab": "",
+        "once": false,
+        "onceDelay": 0.1,
+        "topic": "",
+        "x": 570,
+        "y": 460,
+        "wires": [
+            [
+                "abd2eda2d3d71162"
+            ]
+        ]
+    },
+    {
+        "id": "7bfbc3bdb59c1514",
+        "type": "inject",
+        "z": "defcf8ff528868a9",
+        "g": "d2af47e17887c1db",
+        "name": "Test Socket",
+        "props": [
+            {
+                "p": "tbCmd",
+                "v": "tbTestConnection",
+                "vt": "str"
+            },
+            {
+                "p": "listener",
+                "v": "",
+                "vt": "str"
+            },
+            {
+                "p": "listener1",
+                "v": "widget-action",
+                "vt": "str"
+            },
+            {
+                "p": "listener2",
+                "v": "tbSendMessage",
+                "vt": "str"
+            },
+            {
+                "p": "listener3",
+                "v": "tbClientCommands",
+                "vt": "str"
+            }
+        ],
+        "repeat": "",
+        "crontab": "",
+        "once": false,
+        "onceDelay": 0.1,
+        "topic": "",
+        "x": 710,
+        "y": 740,
+        "wires": [
+            [
+                "81390a50f1f63b64"
+            ]
+        ]
+    },
+    {
+        "id": "7fdaf376a44b8d49",
+        "type": "inject",
+        "z": "defcf8ff528868a9",
+        "g": "ccac38d9c099129d",
+        "name": "Reset table",
+        "props": [
+            {
+                "p": "tbCmd",
+                "v": "tbResetTable",
+                "vt": "str"
+            }
+        ],
+        "repeat": "",
+        "crontab": "",
+        "once": false,
+        "onceDelay": 0.1,
+        "topic": "",
+        "x": 130,
+        "y": 140,
+        "wires": [
+            [
+                "9e18bd8b47c97773"
+            ]
+        ]
+    },
+    {
+        "id": "a42079590f9f7de7",
+        "type": "inject",
+        "z": "defcf8ff528868a9",
+        "g": "1327d7698de96e7c",
+        "name": "Update oe Add Data",
+        "props": [
+            {
+                "p": "tbCmd",
+                "v": "updateOrAddData",
+                "vt": "str"
+            }
+        ],
+        "repeat": "",
+        "crontab": "",
+        "once": false,
+        "onceDelay": 0.1,
+        "topic": "",
+        "x": 150,
+        "y": 580,
+        "wires": [
+            [
+                "0ec1989a28a1c6cc"
+            ]
+        ]
+    },
+    {
+        "id": "2521136fd425025d",
+        "type": "inject",
+        "z": "defcf8ff528868a9",
+        "g": "1327d7698de96e7c",
+        "name": "add row",
+        "props": [
+            {
+                "p": "tbCmd",
+                "v": "addRow",
+                "vt": "str"
+            },
+            {
+                "p": "tbArgs",
+                "v": "[\t   {\t       \"id\":27,\t       \"fname\":\"Mickey\",\t       \"lname\":\"Lewis\",\t       \"gender\": \"Male \",\t       \"age\":50,\t       \"clr\": 4,\t       \"notes\":\"New row 27\"\t   }\t]",
+                "vt": "jsonata"
+            }
+        ],
+        "repeat": "",
+        "crontab": "",
+        "once": false,
+        "onceDelay": 0.1,
+        "topic": "",
+        "x": 110,
+        "y": 620,
+        "wires": [
+            [
+                "c86666683436d68a"
+            ]
+        ]
+    },
+    {
+        "id": "a253d321a86c5a1c",
+        "type": "inject",
+        "z": "defcf8ff528868a9",
+        "g": "1327d7698de96e7c",
+        "name": "delete row",
+        "props": [
+            {
+                "p": "tbCmd",
+                "v": "deleteRow",
+                "vt": "str"
+            },
+            {
+                "p": "tbArgs",
+                "v": "[27]",
+                "vt": "jsonata"
+            }
+        ],
+        "repeat": "",
+        "crontab": "",
+        "once": false,
+        "onceDelay": 0.1,
+        "topic": "",
+        "x": 120,
+        "y": 700,
+        "wires": [
+            [
+                "c86666683436d68a"
+            ]
+        ]
+    },
+    {
+        "id": "addf7765bde79edc",
+        "type": "inject",
+        "z": "defcf8ff528868a9",
+        "g": "1327d7698de96e7c",
+        "name": "Set Data",
+        "props": [
+            {
+                "p": "tbCmd",
+                "v": "setData",
+                "vt": "str"
+            }
+        ],
+        "repeat": "",
+        "crontab": "",
+        "once": false,
+        "onceDelay": 0.1,
+        "topic": "",
+        "x": 120,
+        "y": 500,
+        "wires": [
+            [
+                "1fa6283821e966fb"
+            ]
+        ]
+    },
+    {
+        "id": "4b83b9c9251019f8",
+        "type": "inject",
+        "z": "defcf8ff528868a9",
+        "g": "76e9b47d9b1ca7fd",
+        "name": "Clear styles",
+        "props": [
+            {
+                "p": "tbCmd",
+                "v": "tbClearStyles",
+                "vt": "str"
+            }
+        ],
+        "repeat": "",
+        "crontab": "",
+        "once": false,
+        "onceDelay": 0.1,
+        "topic": "",
+        "x": 570,
+        "y": 400,
+        "wires": [
+            [
+                "abd2eda2d3d71162"
+            ]
+        ]
+    },
+    {
+        "id": "9e18bd8b47c97773",
+        "type": "link out",
+        "z": "defcf8ff528868a9",
+        "g": "ccac38d9c099129d",
+        "name": "link out 70",
+        "mode": "link",
+        "links": [
+            "20bfc0f8799a929b"
+        ],
+        "x": 365,
+        "y": 120,
+        "wires": []
+    },
+    {
+        "id": "a4532981bbc16849",
+        "type": "inject",
+        "z": "defcf8ff528868a9",
+        "g": "76e9b47d9b1ca7fd",
+        "name": "Show column",
+        "props": [
+            {
+                "p": "tbCmd",
+                "v": "showColumn",
+                "vt": "str"
+            },
+            {
+                "p": "tbArgs",
+                "v": "[\"age\"]",
+                "vt": "jsonata"
+            }
+        ],
+        "repeat": "",
+        "crontab": "",
+        "once": false,
+        "onceDelay": 0.1,
+        "topic": "",
+        "x": 570,
+        "y": 500,
+        "wires": [
+            [
+                "abd2eda2d3d71162"
+            ]
+        ]
+    },
+    {
+        "id": "a13b0f277c69cf95",
+        "type": "link out",
+        "z": "defcf8ff528868a9",
+        "g": "1117663602763c33",
+        "name": "link out 71",
+        "mode": "link",
+        "links": [
+            "20bfc0f8799a929b"
+        ],
+        "x": 315,
+        "y": 340,
+        "wires": []
+    },
+    {
+        "id": "81390a50f1f63b64",
+        "type": "link out",
+        "z": "defcf8ff528868a9",
+        "g": "d2af47e17887c1db",
+        "name": "link out 72",
+        "mode": "link",
+        "links": [
+            "20bfc0f8799a929b"
+        ],
+        "x": 855,
+        "y": 720,
+        "wires": []
+    },
+    {
+        "id": "d2f553d687cb57ba",
+        "type": "inject",
+        "z": "defcf8ff528868a9",
+        "g": "76e9b47d9b1ca7fd",
+        "name": "Set header text color",
+        "props": [
+            {
+                "p": "tbCmd",
+                "v": "tbSetStyle",
+                "vt": "str"
+            },
+            {
+                "p": "rowId",
+                "v": "tbHeader",
+                "vt": "str"
+            },
+            {
+                "p": "field",
+                "v": "age",
+                "vt": "str"
+            },
+            {
+                "p": "color",
+                "v": "red",
+                "vt": "str"
+            }
+        ],
+        "repeat": "",
+        "crontab": "",
+        "once": false,
+        "onceDelay": 0.1,
+        "topic": "",
+        "x": 590,
+        "y": 320,
+        "wires": [
+            [
+                "7b3e555552b35062"
+            ]
+        ]
+    },
+    {
+        "id": "7b3e555552b35062",
+        "type": "function",
+        "z": "defcf8ff528868a9",
+        "g": "76e9b47d9b1ca7fd",
+        "name": "",
+        "func": "msg.tbScope = {rowId:msg.rowId,field: msg.field};\nmsg.tbStyles = {\n    color: msg.color\n};\nreturn msg;",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 765,
+        "y": 300,
+        "wires": [
+            [
+                "abd2eda2d3d71162"
+            ]
+        ],
+        "l": false
+    },
+    {
+        "id": "ff7cad257a40a0e9",
+        "type": "inject",
+        "z": "defcf8ff528868a9",
+        "g": "1117663602763c33",
+        "name": "Get # of rows",
+        "props": [
+            {
+                "p": "tbCmd",
+                "v": "getDataCount",
+                "vt": "str"
+            }
+        ],
+        "repeat": "",
+        "crontab": "",
+        "once": false,
+        "onceDelay": 0.1,
+        "topic": "",
+        "x": 130,
+        "y": 320,
+        "wires": [
+            [
+                "a13b0f277c69cf95"
+            ]
+        ]
+    },
+    {
+        "id": "d040291ed84db657",
+        "type": "inject",
+        "z": "defcf8ff528868a9",
+        "g": "1117663602763c33",
+        "name": "Get row",
+        "props": [
+            {
+                "p": "tbCmd",
+                "v": "getRow",
+                "vt": "str"
+            },
+            {
+                "p": "tbArgs",
+                "v": "[2]",
+                "vt": "jsonata"
+            }
+        ],
+        "repeat": "",
+        "crontab": "",
+        "once": false,
+        "onceDelay": 0.1,
+        "topic": "",
+        "x": 110,
+        "y": 360,
+        "wires": [
+            [
+                "a13b0f277c69cf95"
+            ]
+        ]
+    },
+    {
+        "id": "1fa6283821e966fb",
+        "type": "function",
+        "z": "defcf8ff528868a9",
+        "g": "1327d7698de96e7c",
+        "name": "function 82",
+        "func": "msg.tbArgs = [\n\t[\n\t\t{ id: 2, fname: \"Jack\", lname: \"Brown\", gender: \"Male \", age: 32,clr:3, notes: \"Table-1 Line 2\"},\n\t\t{ id: 3, fname: \"Jill\", lname: \"Baker\", gender: \"Female\", age: 21, clr: 2,\tnotes: \"Table-1 Line 3\"},\n\t\t{ id: 8, fname: \"Tess\", lname: \"Harper\", gender: \"Female\", age: 25, clr: 5, notes: \"Table-1 Line 8\"}\n\t]\n]\nreturn msg;",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 275,
+        "y": 500,
+        "wires": [
+            [
+                "c86666683436d68a"
+            ]
+        ],
+        "l": false
+    },
+    {
+        "id": "c86666683436d68a",
+        "type": "link out",
+        "z": "defcf8ff528868a9",
+        "g": "1327d7698de96e7c",
+        "name": "link out 73",
+        "mode": "link",
+        "links": [
+            "20bfc0f8799a929b"
+        ],
+        "x": 365,
+        "y": 620,
+        "wires": []
+    },
+    {
+        "id": "5afc770e33a1f998",
+        "type": "function",
+        "z": "defcf8ff528868a9",
+        "g": "1327d7698de96e7c",
+        "name": "function 83",
+        "func": "msg.tbArgs = [\n\t[\n\t\t{ id: 2, notes: \"Table-1 Line 2(upd)\"},\n\t\t{ id: 3, fname: \"Indira(upd)\" }\n\t]\n]\n\nreturn msg;",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 275,
+        "y": 540,
+        "wires": [
+            [
+                "c86666683436d68a"
+            ]
+        ],
+        "l": false
+    },
+    {
+        "id": "0ec1989a28a1c6cc",
+        "type": "function",
+        "z": "defcf8ff528868a9",
+        "g": "1327d7698de96e7c",
+        "name": "function 84",
+        "func": "msg.tbArgs = [\n\t[\n\t\t{ id: 2, notes: \"Table-1 Line 2(upd)\"},\n\t\t{ id: 3, fname: \"Indira(upd)\" },\n\t\t {id: 15,fname: \"Tom\", lname: \"Jones\",gender: \"Unknown\",age: 50, clr:6,notes: \"Table-1 Line 15\"}\n\t]\n]\n\nreturn msg;",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 275,
+        "y": 580,
+        "wires": [
+            [
+                "c86666683436d68a"
+            ]
+        ],
+        "l": false
+    },
+    {
+        "id": "92ef4472bdb139d8",
+        "type": "ui-markdown",
+        "z": "defcf8ff528868a9",
+        "group": "ec59cdcab7e75298",
+        "name": "Title",
+        "order": 1,
+        "width": "4",
+        "height": "1",
+        "content": "# ui-tabulator Example\n",
+        "className": "",
+        "x": 470,
+        "y": 60,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "724572d32d81d2e6",
+        "type": "function",
+        "z": "defcf8ff528868a9",
+        "g": "ccac38d9c099129d",
+        "name": "function 85",
+        "func": "let dt = new Date();\nlet dateStr = String(dt.getFullYear()) +\n\tString(dt.getMonth() + 1).padStart(2, '0') +\n\tString(dt.getDate()).padStart(2, '0');\n\nmsg.tbArgs = [\"csv\",`table_export_${dateStr}.csv`];\nreturn msg;",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 245,
+        "y": 180,
+        "wires": [
+            [
+                "9e18bd8b47c97773"
+            ]
+        ],
+        "l": false
+    },
+    {
+        "id": "942a7f85d21cd6b3",
+        "type": "inject",
+        "z": "defcf8ff528868a9",
+        "g": "1327d7698de96e7c",
+        "name": "Update row",
+        "props": [
+            {
+                "p": "tbCmd",
+                "v": "updateRow",
+                "vt": "str"
+            },
+            {
+                "p": "tbArgs",
+                "v": "[\t   2, {\"fname\":\"Bob\",\"age\":40}\t]",
+                "vt": "jsonata"
+            }
+        ],
+        "repeat": "",
+        "crontab": "",
+        "once": false,
+        "onceDelay": 0.1,
+        "topic": "",
+        "x": 130,
+        "y": 660,
+        "wires": [
+            [
+                "c86666683436d68a"
+            ]
+        ]
+    },
+    {
+        "id": "2cdfb8c12b389941",
+        "type": "inject",
+        "z": "defcf8ff528868a9",
+        "g": "ccac38d9c099129d",
+        "name": "Export to file",
+        "props": [
+            {
+                "p": "tbCmd",
+                "v": "download",
+                "vt": "str"
+            }
+        ],
+        "repeat": "",
+        "crontab": "",
+        "once": false,
+        "onceDelay": 0.1,
+        "topic": "",
+        "x": 130,
+        "y": 180,
+        "wires": [
+            [
+                "724572d32d81d2e6"
+            ]
+        ]
+    },
+    {
+        "id": "59f7c83cfe44c342",
+        "type": "ui-page",
+        "name": "ui-tabulator",
+        "ui": "b7fd8a2cce8052cc",
+        "path": "/ui-tabulator",
+        "icon": "table",
+        "layout": "notebook",
+        "theme": "b7b1935fbb33bbc8",
+        "order": 1,
+        "className": "",
+        "visible": true,
+        "disabled": "false"
+    },
+    {
+        "id": "ec59cdcab7e75298",
+        "type": "ui-group",
+        "name": "ui-tabulator-1",
+        "page": "59f7c83cfe44c342",
+        "width": "5",
+        "height": "1",
+        "order": 1,
+        "showTitle": false,
+        "className": "",
+        "visible": "true",
+        "disabled": "false"
+    },
+    {
+        "id": "b7fd8a2cce8052cc",
+        "type": "ui-base",
+        "name": "ui1",
+        "path": "/dashboard",
+        "includeClientData": true,
+        "acceptsClientConfig": [
+            "ui-control",
+            "ui-notification"
+        ]
+    },
+    {
+        "id": "b7b1935fbb33bbc8",
+        "type": "ui-theme",
+        "name": "def theme",
+        "colors": {
+            "surface": "#ffffff",
+            "primary": "#0094ce",
+            "bgPage": "#eeeeee",
+            "groupBg": "#ffffff",
+            "groupOutline": "#cccccc"
+        },
+        "sizes": {
+            "pagePadding": "12px",
+            "groupGap": "12px",
+            "groupBorderRadius": "4px",
+            "widgetGap": "12px"
+        }
+    }
+]
