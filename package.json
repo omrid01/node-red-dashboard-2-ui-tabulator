@@ -1,6 +1,6 @@
 {
     "name": "node-red-dashboard-2-table-tabulator",
-    "version": "0.2.5",
+    "version": "0.2.6",
     "description": "Wrapper for Tabulator-tables package, for Node-RED Dashboard 2.0",
     "keywords": [
         "node-red",

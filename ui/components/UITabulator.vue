@@ -45,7 +45,7 @@ export default {
 			tblStyleMap: 	null, 	// The styles assigned to the table (via the tbSetStyle command)
 			rowIdField: 	"id"	// The name of the field which holds the unique row Id (the default is 'id', but can be overriden)
 
-			,initCount: 0	// temporary counter (working around a dash-2 bug) for 'widget-load' events
+//			,initCount: 0	// temporary counter (working around a dash-2 bug) for 'widget-load' events
 		}
     },
 //******************************************************************************************************************************************
@@ -128,22 +128,25 @@ export default {
 		this.$socket.on('widget-load:' + this.id, (msg) => {
 			const dsDummyImage = "dummyDSImage";
 
+//^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+// To delete after we see all is solved
 			// Temp workaround for multi-notifications bug 
-			this.initCount++;
-			console.log(`${this.id}/widget-load: Datastore=${msg===dsDummyImage?'dummy':'image'},Count=${this.initCount},ts=${Date.now()}${this.initCount >1?"-->Ignoring":""}`);
-			if (this.initCount > 1)
-				return;
+//			this.initCount++;
+//			console.log(`${this.id}/widget-load: Datastore=${msg===dsDummyImage?'dummy':'image'},Count=${this.initCount},ts=${Date.now()}${this.initCount >1?"-->Ignoring":""}`);
+//			if (this.initCount > 1)
+//				return;
+//^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 			
 			if (!msg || msg === "dummyDSImage")
 			{
-				debugLog(this.id+": creating table from node configuration");
+				console.log(this.id+": Data store is empty, creating table from node configuration");
 				let initObj = parseTblConfig(this.props.initObj);
 				if (initObj !== null)
 					createTable(initObj,$widgetScope,null,null,false);
 			}
 			else
 			{
-				debugLog(this.id+": creating table from datastore image");
+				console.log(this.id+": Creating table from datastore image");
 				this.tblHasDSImage = true;
 				createTblFromDatastore(msg,this);
 			}
@@ -154,7 +157,7 @@ export default {
 		destroyTable(this,null);
 
         /* Make sure, any events you subscribe to on SocketIO are unsubscribed to here */
-        this.$socket?.off('widget-load' + this.id)
+        this.$socket?.off('widget-load:' + this.id)
         this.$socket?.off('msg-input:' + this.id)
     },
 //******************************************************************************************************************************************
