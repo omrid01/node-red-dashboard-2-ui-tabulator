@@ -2,6 +2,8 @@
 
 A short summary of the node's design concepts, functionality & configuration options. Complete, detailed usage reference is provided in the node's on-line help, available in the Node-RED editor.
 # ui-tabulator
+![](https://github.com/omrid01/node-red-dashboard-2-table-tabulator/assets/100078999/e0ed0b1d-6883-4e96-890c-3e47c136173a)
+
 The **ui-tabulator** custom node uses the popular [Tabulator](https://www.tabulator.info) JavaScript package, for updating, querying & presentation of UI tables.
 > **Note:** the node comes in addition to, not replacing, dashboard V2.0's native vue-based **table** node.
 
