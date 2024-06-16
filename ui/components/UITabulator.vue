@@ -1112,7 +1112,7 @@ function tbEventMsg(ev,sockId)
 	this.topic = "tbNotification";
 	this.event = ev;
 	this.payload = {};
-	this.NotificationId = createUniqueId();
+	this.notificationId = createUniqueId();
 	if (sockId)
 		this._client = {socketId:sockId};
 }
