@@ -203,7 +203,7 @@ module.exports = function (RED) {
 							cssDir =  __dirname + "/../../../tabulator-tables/dist/css/";
 							if (fs.existsSync(cssDir))
 							{
-								debugLog("Found CSS directory in Node-red");
+								debugLog("Found CSS directory in Node-red node-modules");
 								themeFile = cssDir + themeFile.slice(cssPrefix.length);
 							}
 							else
