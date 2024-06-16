@@ -54,9 +54,9 @@ module.exports = function (RED) {
 					// Table notifications
 					if (msg.topic === "tbNotification")
 					{
-						if (config.multiUser || msg.NotificationId !== node.lastNotificationId)
+						if (config.multiUser || msg.notificationId !== node.lastNotificationId)
 						{
-							node.lastNotificationId = msg.NotificationId;
+							node.lastNotificationId = msg.notificationId;
 							node.send(msg);
 						}
 						return;
