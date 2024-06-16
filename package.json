@@ -1,6 +1,6 @@
 {
     "name": "@omrid01/node-red-dashboard-2-table-tabulator",
-    "version": "0.2.8",
+    "version": "0.2.9",
     "description": "Table node, using Tabulator-tables package, for Node-RED Dashboard 2.0",
     "keywords": [
         "node-red",
@@ -29,7 +29,8 @@
         "dist/*",
         "nodes/*",
         "ui/*",
-        "resources/*"
+        "resources/*",
+		"examples/*"
     ],
     "scripts": {
         "build": "vite build",
@@ -59,7 +60,7 @@
         "vite-plugin-css-injected-by-js": "^3.3.0"
     },
     "engines": {
-        "node": ">=18"
+        "node": ">=18.0.0"
     },
     "node-red": {
         "version": ">=3.0.0",

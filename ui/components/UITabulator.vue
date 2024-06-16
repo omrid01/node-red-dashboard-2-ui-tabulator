@@ -920,49 +920,15 @@ function setEventNotifications($widgetScope)
 		// Row events
 		//-------------------------------------------------------
 			case "rowClick":
-				$widgetScope.tbl.on(ev, function(e, row){  //e = the mouse event object , row = row component
-					let eventMsg = rowEventMsg(row,ev,$widgetScope.$socket.id);
-					$widgetScope.send(eventMsg);
-				});
-				break;
 			case "rowDblClick":
-				$widgetScope.tbl.on(ev, function(e, row){  //e = the mouse event object , row = row component
-					let eventMsg = rowEventMsg(row,ev,$widgetScope.$socket.id);
-					//debugLog("Sending event",eventMsg);
-					$widgetScope.send(eventMsg);
-				});
-				break;
 			case "rowTap":
-				$widgetScope.tbl.on(ev, function(e, row){  //e = the mouse event object , row = row component
-					let eventMsg = rowEventMsg(row,ev,$widgetScope.$socket.id);
-					$widgetScope.send(eventMsg);
-				});
-				break;
 			case "rowDblTap":
-				$widgetScope.tbl.on(ev, function(e, row){  //e = the mouse event object , row = row component
-					let eventMsg = rowEventMsg(row,ev,$widgetScope.$socket.id);
-					$widgetScope.send(eventMsg);
-				});
-				break;
 			case "rowTapHold":
-				$widgetScope.tbl.on(ev, function(e, row){  //e = the mouse event object , row = row component
-					let eventMsg = rowEventMsg(row,ev,$widgetScope.$socket.id);
-					$widgetScope.send(eventMsg);
-				});
-				break;
 			case "rowAdded":  	// sent upon addRow, updateOrAddRow, addData or updateOrAddData
-				$widgetScope.tbl.on(ev, function(row){	// row = row component
-					let eventMsg = rowEventMsg(row,ev,$widgetScope.$socket.id);
-					$widgetScope.send(eventMsg);
-				});
-				break;
 			case "rowUpdated":	// sent only upon programmatic data update (updateRow, updateOrAddRow, updateData or updateOrAddData), not in-cell edits
-				$widgetScope.tbl.on(ev, function(row){	// row = row component
-					let eventMsg = rowEventMsg(row,ev,$widgetScope.$socket.id);
-					$widgetScope.send(eventMsg);
-				});
-				break;
 			case "rowDeleted": // sent upon DeleteRow
+			case "rowSelected": // sent upon manual or programmatic row selection
+			case "rowDeselected": // sent upon manual or programmatic row deselection
 				$widgetScope.tbl.on(ev, function(row){	// row = row component
 					let eventMsg = rowEventMsg(row,ev,$widgetScope.$socket.id);
 					$widgetScope.send(eventMsg);
@@ -1018,29 +984,9 @@ function setEventNotifications($widgetScope)
 				});
 				break;
 			case "cellClick":
-				$widgetScope.tbl.on(ev, function(e,cell){	// e = mouse event, cell = cell component
-					let eventMsg = cellEventMsg(cell,ev,$widgetScope.$socket.id);
-					$widgetScope.send(eventMsg);
-				});
-				break;
 			case "cellTap":
-				$widgetScope.tbl.on(ev, function(e,cell){	// e = mouse event, cell = cell component
-					let eventMsg = cellEventMsg(cell,ev,$widgetScope.$socket.id);
-					$widgetScope.send(eventMsg);
-				});
-				break;
 			case "cellDblClick":
-				$widgetScope.tbl.on(ev, function(e,cell){	// e = mouse event, cell = cell component
-					let eventMsg = cellEventMsg(cell,ev,$widgetScope.$socket.id);
-					$widgetScope.send(eventMsg);
-				});
-				break;
 			case "cellDblTap":
-				$widgetScope.tbl.on(ev, function(e,cell){	// e = mouse event, cell = cell component
-					let eventMsg = cellEventMsg(cell,ev,$widgetScope.$socket.id);
-					$widgetScope.send(eventMsg);
-				});
-				break;
 			case "cellTapHold":
 				$widgetScope.tbl.on(ev, function(e,cell){	// e = mouse event, cell = cell component
 					let eventMsg = cellEventMsg(cell,ev,$widgetScope.$socket.id);

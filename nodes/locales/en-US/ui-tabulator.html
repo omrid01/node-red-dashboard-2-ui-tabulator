@@ -51,12 +51,18 @@ Enables presentation, update &amp; query of tables on the dashboard UI, using th
 	<p>When checked (<i><b>Multi-user</b></i> mode), each client table is independent and maintains its own data image, without syncronization or datastore save/reload.</p>
 
 	<p><b><u>Note</u>:</b> in both <b><i>Shared</i></b> and <b><i>Multi-user</i></b> modes, messages from "regular" (non-dashboard) nodes (e.g. <i><b>inject</b></i>, <i><b>function</b></i> etc.) are replicated by Node-RED and sent to all clients. In contrast, messages originated from dashboard nodes (e.g. buttons, droplists, templates etc.), will only be received by tables <b>**of the same client**</b> (unless specifically set otherwise).</p>
-	<br>See further details on multi-client environment, in the <b><i>Details</i></b> section below.</dd>
+	See further details on multi-client environment, in the <b><i>Details</i></b> section below.</dd>
 
     <dt class="optional">Theme File<span class="property-type">URL/String</span></dt>
-    <dd><p>Name or URL of an optional theme file, overriding the default table stylesheet with a selected <a href="https://tabulator.info/docs/6.2/theme">Tabulator Theme</a>. The file can be selected from a list of predefined Tabulator themes (CSS stylesheets) such as <i><b>Midnight</b></i>, <i><b>Modern</b></i> etc. or provided in a user-defined file.</p>
-	<p><u><b>Note</b></u>: currently, the theme selection is at page level, i.e. applies to all table nodes that are on the same dashboard page.</p>
-	<p>See further details, and additional ways of styling, in the <b><i>Details</i></b> section below.</p>
+    <dd><p>Name or URL of an optional theme file, overriding the default table stylesheet with a selected <a href="https://tabulator.info/docs/6.2/theme">Tabulator Theme</a>. The file can be selected from a list of predefined Tabulator themes (CSS stylesheets), using the prefix <code><b>@CSS:</b></code>, for example:
+	<pre><code>@CSS:tabulator_midnight.min.css</code></pre>
+	or from a URL (accessible from the server), using the prefix <code><b>@URL:</b></code>, for example:
+	<pre><code>@URL:https://unpkg.com/tabulator-tables@6.2.1/dist/css/tabulator_midnight.min.css</code></pre>
+	If not prefixed by either of the above, it is assumed as the full file name (including path) on the <b>server</b> file system. For example:
+	<pre><code>C:/My_Project/CSS_Files/tabulator_midnight.min.css</code></pre>
+
+	<p><u><b>Note</b></u>: currently, the theme selection is at page level, i.e. applies to all table nodes that are on the same page.</p>
+	<p>See additional ways of styling, in the <b><i>Details</i></b> section below.</p>
 	</dd>
 <!--
     <dt>Table Id <span class="property-type">string</span></dt>
@@ -196,7 +202,7 @@ For example:
 <p><i><b>Supported Events</b></i>
 <ul>
 <li><b>Table Creation</b><pre><code>tableBuilt</code></pre> - Sent per each table instance (on each client)</li>
-<li><b>Row Interaction</b><pre><code>rowClick, rowDblClick, rowTap, rowDblTap, rowTapHold</code></pre></li>
+<li><b>Row Interaction</b><pre><code>rowClick, rowDblClick, rowTap, rowDblTap, rowTapHold, rowSelected, rowDeselected</code></pre></li>
 <li><b>Cell Interaction</b><pre><code>cellClick, cellDblClick, cellTap, cellDblTap, cellTapHold</code></pre></li>
 <li><b>Cell Change (by user) </b><pre><code>cellEdited</code></pre></li>
 </ul>
@@ -204,23 +210,7 @@ For example:
 <p><b><u>CSS Styling</u></b>
 <p>Setting table styles can be done at different levels:
 <ol>
-<li><p><b>Theme file</b>: selection of a Tabulator CSS stylesheet in the node configuration</li></p>
-	<p>There are 3 ways to specify/select a theme file:</p>
-	<ul>
-
-	<li><p><b>Select a pre-installed file:</b><br>
-	Provide the name of a pre-installed theme file, prefixed by <b><code>@CSS:</code></b>, for example:
-	<pre><code>@CSS:tabulator_midnight.min.css</code></pre>
-	You can view the list of available pre-installed tabulator CSS files in <code>&LT;Node-RED home&GT;/node-modules/@omrid01/node-red-dashboard-2-table-tabulator/node_modules/tabulator-tables/dist/css</code></p></li>
-
-	<li><p><b>Select from a Web location:</b><br>
-	Provide a web URL of the file (in a web location accessible to the Node-RED server). The URL should be prefixed by <b><code>@URL:</code></b>, for example:
-	<pre><code>@URL:https://unpkg.com/tabulator-tables@6.2.1/dist/css/tabulator_midnight.min.css</code></pre></p></li>
-
-	<li><p><b>Specify a fully-qualified file name:</b><br>
-	If not prefixed by either <b><code>@CSS:</code></b> or <b><code>@URL:</code></b>, it is assumed as the full file name (including path) of the required theme file, on the server file system. For example:
-	<pre><code>C:/My_Project/CSS_Files/tabulator_midnight.min.css</code></pre></p></li>
-	</ul></p>
+<li><p><b>Theme file</b>: selection of a Tabulator CSS stylesheet in the node configuration, either from the predefined theme files (prefixed by <b><code>@CSS:</code></b>), a URL (prefixed by <b><code>@URL:</code></b>) or external file on the server file system.</li></p>
 
 	<p><u><b>Note</b></u>: currently, the theme selection is at page level, i.e. applies to all table nodes that are on the same page.</p>
 

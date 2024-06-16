@@ -35,14 +35,14 @@
         },
         "nodes": [
             "45dd2e2e1daafefe",
-            "6bb6082c330626bb",
             "a04153d44662034d",
             "abd2eda2d3d71162",
             "2fcf5d2e4360557a",
             "4b83b9c9251019f8",
             "a4532981bbc16849",
             "d2f553d687cb57ba",
-            "7b3e555552b35062"
+            "0af4dbbb9f034e39",
+            "6696eda7ede52f57"
         ],
         "x": 454,
         "y": 239,
@@ -348,7 +348,7 @@
         "y": 360,
         "wires": [
             [
-                "6bb6082c330626bb"
+                "6696eda7ede52f57"
             ]
         ]
     },
@@ -410,28 +410,6 @@
         ]
     },
     {
-        "id": "6bb6082c330626bb",
-        "type": "function",
-        "z": "defcf8ff528868a9",
-        "g": "76e9b47d9b1ca7fd",
-        "name": "",
-        "func": "msg.tbScope = {rowId:msg.rowId,field: msg.field};\nmsg.tbStyles = {\n    backgroundColor:msg.color\n};\nreturn msg;",
-        "outputs": 1,
-        "timeout": 0,
-        "noerr": 0,
-        "initialize": "",
-        "finalize": "",
-        "libs": [],
-        "x": 765,
-        "y": 380,
-        "wires": [
-            [
-                "abd2eda2d3d71162"
-            ]
-        ],
-        "l": false
-    },
-    {
         "id": "a04153d44662034d",
         "type": "inject",
         "z": "defcf8ff528868a9",
@@ -468,7 +446,7 @@
         "y": 280,
         "wires": [
             [
-                "7b3e555552b35062"
+                "0af4dbbb9f034e39"
             ]
         ]
     },
@@ -664,7 +642,7 @@
         "type": "inject",
         "z": "defcf8ff528868a9",
         "g": "1327d7698de96e7c",
-        "name": "Update oe Add Data",
+        "name": "Update or Add Data",
         "props": [
             {
                 "p": "tbCmd",
@@ -909,31 +887,9 @@
         "y": 320,
         "wires": [
             [
-                "7b3e555552b35062"
+                "0af4dbbb9f034e39"
             ]
         ]
-    },
-    {
-        "id": "7b3e555552b35062",
-        "type": "function",
-        "z": "defcf8ff528868a9",
-        "g": "76e9b47d9b1ca7fd",
-        "name": "",
-        "func": "msg.tbScope = {rowId:msg.rowId,field: msg.field};\nmsg.tbStyles = {\n    color: msg.color\n};\nreturn msg;",
-        "outputs": 1,
-        "timeout": 0,
-        "noerr": 0,
-        "initialize": "",
-        "finalize": "",
-        "libs": [],
-        "x": 765,
-        "y": 300,
-        "wires": [
-            [
-                "abd2eda2d3d71162"
-            ]
-        ],
-        "l": false
     },
     {
         "id": "ff7cad257a40a0e9",
@@ -1056,7 +1012,7 @@
         "z": "defcf8ff528868a9",
         "g": "1327d7698de96e7c",
         "name": "function 84",
-        "func": "msg.tbArgs = [\n\t[\n\t\t{ id: 2, notes: \"Table-1 Line 2(upd)\"},\n\t\t{ id: 3, fname: \"Indira(upd)\" },\n\t\t {id: 15,fname: \"Tom\", lname: \"Jones\",gender: \"Unknown\",age: 50, clr:6,notes: \"Table-1 Line 15\"}\n\t]\n]\n\nreturn msg;",
+        "func": "msg.tbArgs = [\n\t[\n\t\t{ id: 2,  notes: \"Table-1 Line 2(upd)\"},\n\t\t{ id: 3,  fname: \"Indira(upd)\" },\n\t\t{ id: 15, fname: \"Tom\", lname: \"Jones\",gender: \"Unknown\", age: 50, clr:6, notes: \"Table-1 Line 15\"}\n\t]\n]\nreturn msg;",
         "outputs": 1,
         "timeout": 0,
         "noerr": 0,
@@ -1167,6 +1123,50 @@
                 "724572d32d81d2e6"
             ]
         ]
+    },
+    {
+        "id": "0af4dbbb9f034e39",
+        "type": "function",
+        "z": "defcf8ff528868a9",
+        "g": "76e9b47d9b1ca7fd",
+        "name": "function 86",
+        "func": "msg.tbScope = { rowId: msg.rowId, field: msg.field };\nmsg.tbStyles = {\n    color: msg.color\n};\nreturn msg;\n",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 755,
+        "y": 300,
+        "wires": [
+            [
+                "abd2eda2d3d71162"
+            ]
+        ],
+        "l": false
+    },
+    {
+        "id": "6696eda7ede52f57",
+        "type": "function",
+        "z": "defcf8ff528868a9",
+        "g": "76e9b47d9b1ca7fd",
+        "name": "function 87",
+        "func": "msg.tbScope = { rowId: msg.rowId, field: msg.field };\nmsg.tbStyles = {\n    backgroundColor: msg.color\n};\nreturn msg;",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 755,
+        "y": 380,
+        "wires": [
+            [
+                "abd2eda2d3d71162"
+            ]
+        ],
+        "l": false
     },
     {
         "id": "59f7c83cfe44c342",

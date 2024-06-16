@@ -189,8 +189,26 @@ module.exports = function (RED) {
 						// __dirname = location of this (executing) file , in this case = C:\Node-red\Dsh2\node-red-ui-tabulator\nodes
 						// Tabulator CSS files are in C:/Node-red/Dsh2/node-red-ui-tabulator/node_modules/tabulator-tables/dist/css/
 						// For example: tabulator_midnight.min.css, tabulator_modern.min.css etc.
-						const cssDir = __dirname + "/../node_modules/tabulator-tables/dist/css/";
-						themeFile = cssDir + themeFile.slice(cssPrefix.length);
+						
+						// check in internal directory
+						let cssDir =  __dirname + "/../node_modules/tabulator-tables/dist/css/";
+						if (fs.existsSync(cssDir))
+						{
+							debugLog("Found local CSS directory "+cssDir);
+							themeFile = cssDir + themeFile.slice(cssPrefix.length);
+						}
+						else
+						{
+							// check in Node-red packages
+							cssDir =  __dirname + "/../../../tabulator-tables7/dist/css/";
+							if (fs.existsSync(cssDir))
+							{
+								console.log("Found CSS directory in Node-red");
+								themeFile = cssDir + themeFile.slice(cssPrefix.length);
+							}
+							else
+								console.error("Cannot find CSS directory");
+						}
 					}
 					// else use file name as-is
 
