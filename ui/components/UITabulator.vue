@@ -487,12 +487,16 @@ function createTable(initObj,$widgetScope,msg,styleMap,saveToDS)
 		}
 		return;
 	}
-
 	destroyTable($widgetScope,null);  // destroy current table (if exists)
+
+	// Clone the table configuration object (rather than give an object reference), to protect the original (the table can modify it)
+	let tmpInitObj = cloneObj(initObj);
+
 	// Create a new table
 	try  
 	{
-		$widgetScope.tbl = new Tabulator($widgetScope.$refs.tabulatorDiv, initObj);
+		// create the table
+		$widgetScope.tbl = new Tabulator($widgetScope.$refs.tabulatorDiv, tmpInitObj);
 		
 			// console.log("Table created");
 			// $widgetScope.send({payload:"Table created"});
@@ -824,7 +828,7 @@ function cellEditSync($widgetScope,msg)
 function tabulatorAsyncAPI(cmd,cmdArgs,msg,$widgetScope,successPostFunc,errorPostFunc)
 {
 	debugLog("Calling '"+cmd+"', API mode=Async");
-	let args = cmdArgs ? cloneObj(cmdArgs) : [];	// for some reason, sometime it doesn't work with the original args object
+	let args = cmdArgs ? cloneObj(cmdArgs) : [];	// for some reason, sometimes it doesn't work with the original args object
 
 	$widgetScope.tbl[cmd](...args)
 		.then(function(xxx){
@@ -1149,8 +1153,20 @@ function checkAddedRows(rows,$widgetScope)
 }
 function cloneObj(obj)
 {
-	// return structuredClone(obj);
-	return JSON.parse(JSON.stringify(obj));
+// 		return structuredClone(obj);
+//		clone = loadsh.cloneDeep(obj);
+//		clone = JSON.parse(JSON.stringify(obj));
+//		clone = RED.util.cloneMessage(obj);
+
+	let clone = null;
+	try  {
+		clone = structuredClone(obj);
+		return clone;
+	}
+	catch (err)	{
+		console.error("Object cloning failed:",err);
+	}
+	return null;
 }
 function createUniqueId()
 {
