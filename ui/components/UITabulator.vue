@@ -237,20 +237,6 @@ function processMsg(msg,$widgetScope)
 				createTable(initObj,$widgetScope,msg,null,false);
 			}
 			return;
-		case "tbClearStyles":
-			if (!$widgetScope.tbl)
-				return;
-			$widgetScope.tblStyleMap = null;
-			let data = $widgetScope.tbl.getData();
-
-			if (!$widgetScope.props.multiUser && $widgetScope.tblHasDSImage)
-				$widgetScope.saveToDatastore(true,$widgetScope.tblConfig,data,null,msg._msgid);
-			
-			debugLog($widgetScope.id+": refreshing table with current config & data");
-			let cfg = cloneObj($widgetScope.tblConfig);
-			cfg.data = data;
-			createTable(cfg,$widgetScope,msg,null,false);
-			return;
 		case "tbCellEditSync":	// internal command notifying an in-cell edit in another client
 			cellEditSync($widgetScope,msg);
 			return; 
@@ -323,6 +309,21 @@ function processMsg(msg,$widgetScope)
 		case "tbSetStyle":
 			setStyle(msg.tbScope,msg.tbStyles,$widgetScope,msg);
 			return; 
+		case "tbClearStyles":
+			$widgetScope.tblStyleMap = null;
+			let data = $widgetScope.tbl.getData();
+
+			if (!$widgetScope.props.multiUser && $widgetScope.tblHasDSImage)
+				$widgetScope.saveToDatastore(true,$widgetScope.tblConfig,data,null,msg._msgid);
+			
+			debugLog($widgetScope.id+": refreshing table with current config & data");
+			let cfg = cloneObj($widgetScope.tblConfig);
+			cfg.data = data;
+			createTable(cfg,$widgetScope,msg,null,false);
+			return;
+		case "tbSetGroupBy":
+			setGroupBy($widgetScope,msg);
+			return;
 		//------------------------------------------------------------------
 		// Managed Tabulator API calls
 		//------------------------------------------------------------------
@@ -807,6 +808,58 @@ function applyFromStyleMap(map,tbl)
 			}
 		}
 	}
+}
+function setGroupBy($widgetScope,msg)
+{
+	if (!msg.tbFields || msg.tbFields == "" || msg.tbFields == [])
+		$widgetScope.tbl.setGroupBy(false); // clear grouping
+	else
+	{
+		let fields = Array.isArray(msg.tbFields) ? msg.tbFields : [msg.tbFields];
+		$widgetScope.tbl.setGroupBy(fields);
+
+		/*
+		groupHeader:function(value, count, data, group){
+			//value - the value all members of this group share
+			//count - the number of rows in this group
+			//data - an array of all the row data objects in this group
+			//group - the group component for the group
+		*/
+		if (msg.tbGroupHeader) 
+		{
+			try {
+				if (fields.length === 1)
+					$widgetScope.tbl.setGroupHeader(function(value, count, data, group) {
+							let hdr = msg.tbGroupHeader;
+							hdr = hdr.replaceAll('$field',fields[0]);
+							hdr = hdr.replaceAll('$value',value);
+							hdr = hdr.replaceAll('$count',count);
+							// Set field counter in case of multiple grouping fields
+							return hdr;
+						});
+				else
+				{
+					let funcArr = [];
+					for (let i = 0 ; i < fields.length ; i++)
+					{
+						let func = function(value, count, data, group) {
+							let hdr = msg.tbGroupHeader;
+							hdr = hdr.replaceAll('$field',fields[i]);
+							hdr = hdr.replaceAll('$value',value);
+							hdr = hdr.replaceAll('$count',count);
+							return hdr;
+						};
+						funcArr.push(func);
+					}
+					$widgetScope.tbl.setGroupHeader(funcArr);
+				}
+			}
+			catch (err)	{
+				msg.error = "GroupBy error: "+err;
+			}
+		}
+	}
+	$widgetScope.send(msg);
 }
 function cellEditSync($widgetScope,msg)
 {

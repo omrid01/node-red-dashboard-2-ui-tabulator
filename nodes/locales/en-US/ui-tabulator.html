@@ -68,7 +68,7 @@ Enables presentation, update &amp; query of tables on the dashboard UI, using th
     <dt>Table Id <span class="property-type">string</span></dt>
 	<dd>An optional, unique Id enabling to get direct API access to the tabulator object from other dashboard <b>template</b> nodes (see <a href="https://tabulator.info/docs/6.2/options#find-table">Finding Tables</a>). Can be used for table interactions which cannot be done through messages. The Id can include only alphanumeric characters, cannot start with a digit, and must be unique across the page.</dd>
 -->
-    <dt>Pass through message from input <span class="property-type">checkbox</span></dt>
+    <dt>Pass-through message from input <span class="property-type">checkbox</span></dt>
 	<dd>When checked, will forward all incoming messages as-is to the output port, <b>in addition</b> to the node'e response</dd>
 </dl>
 <h3>Details</h3>
@@ -83,14 +83,20 @@ Enables presentation, update &amp; query of tables on the dashboard UI, using th
 <h4><u><b>Commands</b></u><h4>
 <p>The commands are divided into <i><b>Tabulator commands</b></i> (directly mapped to Tabulator APIs), and <i><b>Node commands</b></i> (handled internally in the node, or apply additional processing/parsing to the Tabulator API calls).</p>
 
-<p><b><i>Tabulator API Commands</i></b>
+<p><b><i>Summary of Tabulator API Commands</i></b>
 <ul>
 <li><b>Data update</b><pre><code>setData, replaceData, updateData, addData, updateOrAddData, addRow, updateRow, deleteRow, updateOrAddRow, clearData</code></pre></li>
 <li><b>Data Retrieval</b><pre><code>getData, getDataCount, getRow, searchData, getSelectedData</code></pre></li>
 <li><b>Data Selection</b><pre><code>selectRow, deselectRow</code></pre></li>
 <li><b>Table Appearance</b><pre><code>showColumn, hideColumn, setSort, setFilter, getFilters, addFilter, removeFilter, clearFilter</code></pre></li>
 <li><b>Misc.</b><pre><code>download</code></pre></li>
-</ul><p>
+</ul></p>
+<p><b><i>Summary of Node Commands</i></b>
+<ul>
+<li><b>Table Instantiation</b><pre><code>tbCreateTable, tbDestroyTable, tbResetTable</code></pre></li>
+<li><b>Table Appearance</b><pre><code>tbSetStyles, tbClearStyles, tbSetGroupBy</code></pre></li>
+<li><b>Testing &amp; Utility</b><pre><code>tbShowDatastore, tbTestConnection</code></pre></li>
+</ul></p>
 
 <p>The Tabulator API commands use the exact (<b>case sensitive</b>) input/output arguments of their respective APIs, as defined in the Tabulator documentation. The input arguments should be provided as an array within the property <code>msg.tbArgs</code>. If the API requires no arguments, the <code>tbArgs</code> property can be an empty array (<code>[]</code>) or excluded altogether from the message.</li>
 Examples:
@@ -168,6 +174,29 @@ msg.tbScope = {};                             // affects the whole table</code><
 <li><code>tbClearStyles</code><br>
 	Discards all the dynamic styling which were applied by <code>tbSetStyle</code>.<br>
 	Arguments: none<br>
+</li>
+<br>
+<li><code>tbSetGroupBy</code><br>
+	Enables grouping the table by one or more fields.<br>
+	Arguments:
+	<ul>
+		<li><code>tbFields</code><br>
+		A field name, or array of field names, to group the table by. Omitting this argument or providing an empty string will clear the current grouping<br></li>
+		<li><code>tbGroupHeader</code><br>
+		A formatting string which determines the appearance of the group header. It can include 3 pre-defined tokens:
+		<ul>
+		<li><code>$field</code> - the name of the grouping field</li>
+		<li><code>$value</code> - the grouping value of the current group</li>
+		<li><code>$count</code> - the number of rows in the group</li>
+		</ul>
+		<p>for example:
+		<pre><code>msg.tbFields = "name"
+msg.tbGroupHeader = "$field=$value, ($count items)"</code></pre>
+		The group header will then look like: <b>name=John, (5 items)</b></p>
+	
+		<p>It is possible to further customize the group header, by including CSS styling. For example:
+		<pre><code>msg.tbGroupHeader = "$field=&LT;span style="color:red"&GT;$value&LT;/span&GT;, (&LT;b&GT;$count&LT;/b&GT; items)"</code></pre></p>
+	</ul>	</li>
 </li>
 <br>
 <li><code>tbShowDatastore</code><br>
