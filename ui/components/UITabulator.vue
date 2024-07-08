@@ -44,21 +44,23 @@ export default {
 			tblConfig:	 	null,	// Current (active) table configuration (excluding data)
 			tblStyleMap: 	null, 	// The styles assigned to the table (via the tbSetStyle command)
 			rowIdField: 	"id"	// The name of the field which holds the unique row Id (the default is 'id', but can be overriden)
-
-//			,initCount: 0	// temporary counter (working around a dash-2 bug) for 'widget-load' events
 		}
     },
 //******************************************************************************************************************************************
     mounted () {
 		var $widgetScope = this; // Save the 'this' scope for socket listener, callbacks, external functions etc.
-		this.initCount = 0;
 		
 		window.tbPrintToLog = this.props.printToLog;
-		console.log(`***ui-tabulator node ${this.id} mounted on client ${this.$socket.id}, debug=${window.tbPrintToLog?"on":"off"}`);
+		debugLog(`***ui-tabulator node ${this.id} mounted on client ${this.$socket.id}, debug=${window.tbPrintToLog?"on":"off"}`);
 
 		// Load CSS theme
 		if (this.props.themeCSS)
 			loadThemeCSS(this.props.themeCSS,this);
+
+		// Set max table width (else will overflow with no horizontal scroller
+		let maxWidth = this.props.maxWidth.trim();
+		if (maxWidth)
+			$widgetScope.$refs.tabulatorDiv.style.width = maxWidth;
 
 		// set msg listener
         this.$socket.on('msg-input:' + this.id, (msg) => {
@@ -128,15 +130,6 @@ export default {
 		this.$socket.on('widget-load:' + this.id, (msg) => {
 			const dsDummyImage = "dummyDSImage";
 
-//^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-// To delete after we see all is solved
-			// Temp workaround for multi-notifications bug 
-//			this.initCount++;
-//			console.log(`${this.id}/widget-load: Datastore=${msg===dsDummyImage?'dummy':'image'},Count=${this.initCount},ts=${Date.now()}${this.initCount >1?"-->Ignoring":""}`);
-//			if (this.initCount > 1)
-//				return;
-//^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-			
 			if (!msg || msg === "dummyDSImage")
 			{
 				console.log(this.id+": Data store is empty, creating table from node configuration");

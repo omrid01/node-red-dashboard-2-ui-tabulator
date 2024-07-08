@@ -40,6 +40,9 @@ Enables presentation, update &amp; query of tables on the dashboard UI, using th
 }</code></pre>
 	<p>If left empty, or an empty JSON object (<code>{}</code>), the node will load without creating a table (the table can be created later in runtime using the <code>tbCreateTable</code> command).</p></dd>
 
+    <dt class="optional">Max Width <span class="property-type">string</span></dt>
+    <dd>Sets the maximum visible width of the table (in addition to max height which is part of the table configuration object). If the table width or height exceeds the visible area, scrolling bars will appear. The width should be provided in CSS style format, e.g. <code>500px</code> (pixels), <code>100em</code> (font-size), etc.</dd>
+
     <dt class="optional">Notifications <span class="property-type">string</span></dt>
     <dd>Comma-separated string of selected table events, (see <a href="https://www.tabulator.info/docs/6.2/events">Table Events</a>) which will trigger notifications. For example: <pre><code>cellEdited,rowDblClick</code></pre> The list of supported events is provided in the <b>Details</b> section.</dd>
     

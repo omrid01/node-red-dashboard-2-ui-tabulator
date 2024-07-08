@@ -21,6 +21,7 @@ const sampleTblConfig = `{
             name: { value: "" },
             group: { type: 'ui-group', required: true },
 			initObj: {value:sampleTblConfig, validate: function (v) {return (isValidJSON(v) === "")}},
+			maxWidth: { value: "" },
 			events: { value: "" },
             order: { value: 0 },
 			multiUser:{ value: false },
@@ -138,6 +139,10 @@ function isValidJSON(str)
     <div class="form-row">
         <button type="button" id="node-input-check" class="red-ui-button">Check Syntax</button>
         <button type="button" id="node-input-formatJson" class="red-ui-button">Format JSON</button>
+    </div>
+	<div class="form-row">
+        <label for="node-input-maxWidth"><i class="fa fa-tag"></i> Max Width</label>
+        <input type="text" id="node-input-maxWidth" placeholder="Max table width (%, px, em etc.)">
     </div>
 	<div class="form-row">
         <label for="node-input-events"><i class="fa fa-tag"></i> Notifications</label>
