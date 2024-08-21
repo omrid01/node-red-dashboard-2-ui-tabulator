@@ -8,7 +8,7 @@ Enables presentation, update &amp; query of tables on the dashboard UI, using th
     <dd>The command sent to the node. Can invoke a Tabulator API (for setting/getting data or changing appearance) and additional functions.</dd>
     <dt class="optional">tbArgs <span class="property-type">array</span></dt>
     <dd>Contains input arguments for 'Tabulator API' commands, structured as an array of arguments</dd>
-	<p><br>The full list of supported commands, as well as details &amp; examples on structuring input parameters into <code>msg.tbArgs</code>, and additional, command-specific arguments, are described in the <b>Details</b> section below.</p>
+	<p><br>The full list of supported commands, as well as details &amp; examples on structuring input parameters into <code>msg.tbArgs</code>, and additional, command-specific arguments, are described in the <i><b>Commands</b></i> section below.</p>
 </dl>
 <h3>Outputs</h3>
 <dl class="message-properties">
@@ -19,7 +19,7 @@ Enables presentation, update &amp; query of tables on the dashboard UI, using th
     <dt class="optional">topic <span class="property-type">string</span></dt>
     <dd>Optional property. The value <i><b>'tbNotification'</b></i>, indicates an unsolicited message triggered by a table event (with <code>msg.event</code> indicating the event type, and <code>msg.payload</code> containing the related event information)</dd>
 </dl>
-<h3>Node Configuration Properties</h3>
+<h3>Node Configuration</h3>
 <dl class="message-properties">
     <dt>Name, Group, Size <span class="property-type">various</span></dt>
     <dd>Standard properties as in all dashboard 2.0 nodes</dd>
@@ -44,17 +44,16 @@ Enables presentation, update &amp; query of tables on the dashboard UI, using th
     <dd>Sets the maximum visible width of the table (in addition to max height which is part of the table configuration object). If the table width or height exceeds the visible area, scrolling bars will appear. The width should be provided in CSS style format, e.g. <code>500px</code> (pixels), <code>100em</code> (font-size), etc.</dd>
 
     <dt class="optional">Notifications <span class="property-type">string</span></dt>
-    <dd>Comma-separated string of selected table events, (see <a href="https://www.tabulator.info/docs/6.2/events">Table Events</a>) which will trigger notifications. For example: <pre><code>cellEdited,rowDblClick</code></pre> The list of supported events is provided in the <b>Details</b> section.</dd>
+    <dd>Comma-separated string of selected table events, (see <a href="https://www.tabulator.info/docs/6.2/events">Table Events</a>) which will trigger notifications. For example: <pre><code>cellEdited,rowDblClick</code></pre> The list of supported events is provided in the <i><b>Table Notifications</b></i> section.</dd>
     
 	<dt>Multi-user mode <span class="property-type">checkbox</span></dt>
     <dd><p>By default (unchecked), the node runs in <i><b>Shared</b></i> mode, where all table instances across concurrent dashboard clients are kept in sync and show the same table image (data &amp; styling). In addition, the table image is automatically cached in the Node-RED datastore and reloads upon browser open/refresh.</p>
 	
-	<p>Note, that some user settings (e.g. filtering, sorting, row slection etc.), which come on top of the common table image, are considered "private" to their client and do not impact other clients nor the datastore.</p>
+	<p>Note, that some user actions (e.g. filtering, sorting, row slection etc.), are considered "client-specific" and do not impact other clients or the datastore.</p>
 	
-	<p>When checked (<i><b>Multi-user</b></i> mode), each client table is independent and maintains its own data image, without syncronization or datastore save/reload.</p>
+	<p>When checked (<i><b>Multi-user</b></i> mode), each client table is independent and maintains its own data image, with no datastore save/reload.</p>
 
-	<p><b><u>Note</u>:</b> in both <b><i>Shared</i></b> and <b><i>Multi-user</i></b> modes, messages from "regular" (non-dashboard) nodes (e.g. <i><b>inject</b></i>, <i><b>function</b></i> etc.) are replicated by Node-RED and sent to all clients. In contrast, messages originated from dashboard nodes (e.g. buttons, droplists, templates etc.), will only be received by tables <b>**of the same client**</b> (unless specifically set otherwise).</p>
-	See further details on multi-client environment, in the <b><i>Details</i></b> section below.</dd>
+	<p>See further details in the <b><i>Working in Multi-Client Environment</i></b> section below.</p></dd>
 
     <dt class="optional">Theme File<span class="property-type">URL/String</span></dt>
     <dd><p>Name or URL of an optional theme file, overriding the default table stylesheet with a selected <a href="https://tabulator.info/docs/6.2/theme">Tabulator Theme</a>. The file can be selected from a list of predefined Tabulator themes (CSS stylesheets), using the prefix <code><b>@CSS:</b></code>, for example:
@@ -65,25 +64,39 @@ Enables presentation, update &amp; query of tables on the dashboard UI, using th
 	<pre><code>C:/My_Project/CSS_Files/tabulator_midnight.min.css</code></pre>
 
 	<p><u><b>Note</b></u>: currently, the theme selection is at page level, i.e. applies to all table nodes that are on the same page.</p>
-	<p>See additional ways of styling, in the <b><i>Details</i></b> section below.</p>
+	<p>See additional ways of styling, in the <b><i>CSS Styling</i></b> section below.</p>
 	</dd>
+
+    <dt class="optional">DIV Override <span class="property-type">String</span></dt>
+    <dd>Optional: the Id of an alternative DIV container to enable creating the table <i><b>within</b></i> a UI form defined in another template node, as well as control it's style, hide, show etc.
+	<p>The Id must be unique, include only alphanumeric characters, '-' and '_', and not start with a digit. For example:</p>
+	<pre><code>&LT;template&GT;
+   &LT;h2&GT;My Form&LT;/h2&GT;
+   &LT;div class="my-form"&GT;
+      &LT;label&GT;Name: &LT;/label&GT;&LT;input type="text" id="name"&GT;&LT;br&GT;
+      &LT;label&GT;Age: &LT;/label&GT;&LT;input type="text" id="age"&GT;&LT;br&GT;
+
+      &LT;div id="MyTable1234"&GT;&LT;/div&GT;         &LT;!-- Table will come here --&GT;
+
+      &LT;br&GT;&LT;button onClick="insertTable()"&GT;Insert to Table&LT;/button&GT;
+  &LT;/div&GT;
+&LT;/template&GT;</code></pre>
+	In the above example, by setting the DIV override to <b>"MyTable1234"</b> the table will be created inside the form.</dd>
 <!--
-    <dt>Table Id <span class="property-type">string</span></dt>
-	<dd>An optional, unique Id enabling to get direct API access to the tabulator object from other dashboard <b>template</b> nodes (see <a href="https://tabulator.info/docs/6.2/options#find-table">Finding Tables</a>). Can be used for table interactions which cannot be done through messages. The Id can include only alphanumeric characters, cannot start with a digit, and must be unique across the page.</dd>
--->
     <dt>Pass-through message from input <span class="property-type">checkbox</span></dt>
 	<dd>When checked, will forward all incoming messages as-is to the output port, <b>in addition</b> to the node'e response</dd>
+-->
 </dl>
-<h3>Details</h3>
-<u><b>General Notes</b></u><br>
+
+<h3>General Notes</h3>
 <ul>
-<li><p>Tabulator requires each table row to have a unique idetifier. Typically it is the field <code>id</code>, but can be another field, who's name is specified by the <code>index</code> property in the table configuration.</p></li>
+<li><p>Tabulator requires each table row to have a unique idetifier. Typically it is the field <code>id</code>, but can be another field, specified by the <code>index</code> property of the table configuration.</p></li>
 <li><p>Messages sent to the node always return unchanged (except for <code>payload</code> and potentially <code>error</code>). If the user does not want to get a reply to any sent message, he can flag that message with <code>msg.tbDoNotReply = true</code>.</p></li>
 <li><p>The datastore which caches the table image, is cleared upon Node-RED server restart, so persisting the table data is under user responsibility</p></li>
 <li><p>During development/testing it is recommended to open both server & client browser console windows, to view runtime log messages & errors (from both Tabulator itself &amp; the ui-tabulator node). Setting an environment variable <b>TBDEBUG=TRUE</b> in the server (Node-RED) process, will enable extended console reporting in both server & client.</p></li>
 </ul>
 
-<h4><u><b>Commands</b></u><h4>
+<h3>Commands</h3>
 <p>The commands are divided into <i><b>Tabulator commands</b></i> (directly mapped to Tabulator APIs), and <i><b>Node commands</b></i> (handled internally in the node, or apply additional processing/parsing to the Tabulator API calls).</p>
 
 <p><b><i>Summary of Tabulator API Commands</i></b>
@@ -208,13 +221,7 @@ msg.tbGroupHeader = "$field=$value, ($count items)"</code></pre>
 </li>
 </ul>
 
-<p><u><b>Working in Multi-Client Environment</b></u></p>
-<p>Tabulator table objects are created per client (browser) page. Hence, when there are multiple dashboard clients, a single <i><b>ui-tabulator</b></i> node instance, is associated to multiple table objects.</p>
-<p>By default, regardless of shared or multi-user mode,  messages coming from a "regular" (non-dashboard) node and sent to <i><b>ui-tabulator</b></i>, are replicated and sent to its respective table instances across all dashboard clients. In contrast, messages originated from dashboard nodes (e.g. buttons, droplists, templates etc.) contain a client Id, and are only received by tables <b>**of the same client**</b>. To force a client-originated message to go to all clients, either delete the client Id (the property <code>msg._client</code>), or set the property <code>msg.tbClientScope = "tbAllClients"</code>.</p>
-	
-<p>In <b><i>Shared</i></b> mode, Data &amp; styling updates (including in-cell user edits) are automatically synchronized across clients. However, some "private" user settings on top of the common table image (e.g. filtering, sorting, row slection etc.), are not synchronized and allow user-specific experience even in Shared mode. This raises a potential issue, where tables with different sorting/filtering or different row selection, may return different query results (to commands such as <code>getData</code>, <code>getSelectedData</code> etc.). In such cases, to access or query a specific client table, the command needs to include the client Id, or be originated from the same client (by a dashboard widget, e.g. button, template).</p>
-
-<p><b><u>Table Notifications</u></b></p>
+<h3>Table Notifications</h3>
 <p>In addition to sending commands to the table, the node can receive &amp; forward unsolicited notifications on selected table events, defined in the <code>Notifications</code> configuration property. The outgoing notifications will have <code>msg.topic</code> set to <i><b>'tbNotification'</b></i>, <code>msg.event</code> with the event type and <code>msg.payload</code> with the event data.</p>
 For example:
 <pre><code>{
@@ -234,13 +241,26 @@ For example:
 }</code></pre>
 <p><i><b>Supported Events</b></i>
 <ul>
-<li><b>Table Creation</b><pre><code>tableBuilt</code></pre> - Sent per each table instance (on each client)</li>
+<li><b>Table Creation</b><pre><code>tableBuilt</code></pre> - note, that this event will be sent for each table instance (for each client)</li>
 <li><b>Row Interaction</b><pre><code>rowClick, rowDblClick, rowTap, rowDblTap, rowTapHold, rowSelected, rowDeselected</code></pre></li>
 <li><b>Cell Interaction</b><pre><code>cellClick, cellDblClick, cellTap, cellDblTap, cellTapHold</code></pre></li>
 <li><b>Cell Change (by user) </b><pre><code>cellEdited</code></pre></li>
 </ul>
 </p>
-<p><b><u>CSS Styling</u></b>
+<h3>Working in Multi-Client Environment</h3>
+
+<p>In Node-RED, each dashboard node (button, list, table etc.) in the flow has a respective <b><i>Widget</i></b> (UI element) on the dashboard page. hence, in multi-client environment, each dashboard node instance is associated to multiple widgets, and incoming messages to these nodes are broadcasted by Node-RED to their respective widgets across all clients.</p>
+
+<p>By Default, <b>ui-tabulator</b> inspects the incoming messages and accepts only messages originated from either:
+<ul>
+<li> Server (non-dashboard) nodes (e.g. inject, http-in etc.)</li>
+<li> Dashboard widgets (e.g. buttons) which are on <b>its own client page</b></li>
+</ul>
+This enables to send user-specific messages to the <b>ui-tabulator</b> widget (e.g. sorting, filtering, row selection), without affecting other clients. To force a UI-originated message to go to all clients, either delete the client Id (the property <code>msg._client</code>), or set the property <code>msg.tbClientScope = 'tbAllClients'</code>.</p>
+
+<p><b><u>Note</u></b>: when sending a message to <b>ui-tabulator</b> from a server node, Node-Red broadcasts it to all client widgets, which process the message and send an identical response. The <b>ui-tabulator</b> server node eliminates this duplication and sends out a single response.</p>
+
+<h3>CSS Styling</h3>
 <p>Setting table styles can be done at different levels:
 <ol>
 <li><p><b>Theme file</b>: selection of a Tabulator CSS stylesheet in the node configuration, either from the predefined theme files (prefixed by <b><code>@CSS:</code></b>), a URL (prefixed by <b><code>@URL:</code></b>) or external file on the server file system.</li></p>

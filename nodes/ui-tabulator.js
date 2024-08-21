@@ -7,17 +7,22 @@ module.exports = function (RED) {
         const node = this;
 		console.info("ui-tabulator: creating ui-tabulator server node "+node.id);
 
+		const dsDummyImage = "dummyDSImage";
+
 		// Set debug log policy
 		let e = process.env.TBDEBUG;
 		var printToLog  = (e && e.toLowerCase() === 'true') ? true : false;
 		config.printToLog = printToLog;
 
 		// Saving last msg id's to allow filtering duplicate messages (from concurrent open clients)
-		node.lastMsgId = "";
-		node.lastNotificationId = "";
-		node.lastSaveId = "";
-		node.lastClientMsgId = "";
-
+		node.multiUser = config.multiUser;
+		if (!node.multiUser)
+		{
+			node.lastMsgs		= new Map();
+			node.lastSaves		= new Map();
+			node.lastClientMsgs	= new Map();
+		}
+		
         // which group are we rendering this widget
         const group = RED.nodes.getNode(config.group)
         const base = group.getBase()
@@ -26,10 +31,11 @@ module.exports = function (RED) {
         const evts = {
             onAction: true,
             onInput: function (msg, send, done) {  // the *input* message coming into the server node input port
+				debugLog('onInput: '+node.id,msg);
 				
-                // forward it as-is to any connected nodes in Node-RED
-                if (config.passthru)
-					send(msg);
+                // forward it as-is to any connected nodes in Node-RED  - ** deprecated **
+                //if (config.passthru)
+				//	send(msg);
             },
 
             onSocket: {
@@ -40,39 +46,38 @@ module.exports = function (RED) {
                 //},
 
 				//-------------------------------------------------------------------------------------------------
-				// Generic message sender. filters duplicate messages (from multiple open clients, in shared mode)
+				// Generic response sender. filters duplicate messages (from multiple open clients, in shared mode)
                 ['tbSendMessage'+node.id]: function (conn, id, msg) {
-
-					// Connection Test
-					if (msg.tbCmd === "tbTestConnection")
-					{
-						console.log("ui-tabulator connection test: ping from node="+msg.serverNodeId+", client="+msg.clientId+", on listener "+msg.listener);
-						node.send(msg);
-						return;
-					}
-						
 					// Table notifications
+					//--------------------
 					if (msg.topic === "tbNotification")
 					{
-						if (config.multiUser || msg.notificationId !== node.lastNotificationId)
-						{
-							node.lastNotificationId = msg.notificationId;
-							node.send(msg);
-						}
+						//console.log("table notification",msg)
+						node.send(msg);  // Send all notifications - cannot de-duplicate across clients since no common incoming msg id
 						return;
 					}
-
-					// Table reponse messages
-					if (config.multiUser || msg._msgid !== node.lastMsgId)
+					
+					// Reponses to commands
+					//---------------------
+					//console.log("command response",msg)
+					switch (msg.tbCmd)
 					{
-						node.lastMsgId = msg._msgid;
-						node.send(msg);
+						// Connection Test
+						case "tbTestConnection":
+							console.log("ui-tabulator connection test: ping from node="+msg.serverNodeId+", client="+msg.clientId+", on listener "+msg.listener);
+							node.send(msg);
+							break;
+						default: 
+							if (node.multiUser || !inMap(node.lastMsgs,msg._msgid, msg._client || ""))
+								node.send(msg);
+							break;
 					}
                 },
 
 				//-------------------------------------------------------------------------------------------------
 				// Internal commands from the client
                 ['tbClientCommands'+node.id]: function (conn, id, msg) {
+					//console.log("internal client command",msg)
 					switch (msg.tbClientCmd)
 					{
 						// Notification from a table (when in shared mode) about an in-cell user edit.
@@ -83,26 +88,26 @@ module.exports = function (RED) {
 							// Update datastore
 							base.stores.data.save(base, node, msg.dsImage);
 							delete msg.dsImage;
-							msg.tbClientScope = "tbNotOriginator";	// update only the other clients
-							// update other nodes
-							node.emit('input', msg);	// node is sending to itself, forcing replication to all clients
+							delete msg.topic; // remove 'tbNotification' to avoid confusion
+							msg.tbClientScope = "tbNotSameClient";	// update only the other clients
+							// update other client widgets
+							broadcastToClients(msg);
 							break;
 
 						// Datastore commands
 						//---------------------------------------------------------------------
 						case 'tbSaveToDatastore':
-							if (msg.saveId !== node.lastSaveId)
+							if (!inMap(node.lastSaves,msg.saveId,""))
 							{
-								node.lastSaveId = msg.saveId;
+								debugLog("Saving to datastore: node.id="+node.id,msg);
 								let dsImage = msg.payload;
 								//	debugLog(`Saving table for node.id ${node.id}, saveId ${dsImage.saveId}, exists:${dsImage.exists}, config:${dsImage.config}, data:${dsImage.data?dsImage.data.length+' rows': null}`);
 								base.stores.data.save(base, node, dsImage);
 							}
 							break;
 						case 'tbShowDatastore':		// for testing
-							if (msg.clientMsgId !== node.lastClientMsgId)
+							if (!inMap(node.lastClientMsgs,msg.clientMsgId,""))
 							{
-								node.lastClientMsgId = msg.clientMsgId;
 								let data = base.stores.data.get(id) || "<null>";
 								console.log("Datastore image for node "+node.id+":",data);
 								if (msg.sendMsg)
@@ -110,21 +115,16 @@ module.exports = function (RED) {
 							}
 							break;
 						case 'tbClearDatastore':
-							if (msg.clientMsgId !== node.lastClientMsgId)
+							if (!inMap(node.lastClientMsgs,msg.clientMsgId,""))
 							{
-								node.lastClientMsgId = msg.clientMsgId;
-								if (msg.setDummy)
-								{
-									base.stores.data.save(base, node, dsDummyImage);
-									debugLog("Set dummy to datastore: node.id="+node.id);
-								}
-								else
-								{
-									base.stores.data.clear(id);
-									debugLog("Datastore cleared: node.id="+node.id);
-								}
+								debugLog("Setting dummy to datastore: node.id="+node.id);
+								base.stores.data.save(base, node, dsDummyImage);
+
+								// base.stores.data.clear(id);
+								// debugLog("Datastore cleared: node.id="+node.id);
 							}
 							break;
+
 						// Test client/server-node connectivity
 						//---------------------------------------------------------------------
 						case 'tbTestConnection':
@@ -135,22 +135,30 @@ module.exports = function (RED) {
 				}
             }
         }
-
-		// Set a "dummy" object in the data store to ensure 'widget-load' notification
-		const dsDummyImage = "dummyDSImage";
-		let dsImage = base.stores.data.get(node.id);
-		debugLog(node.id+": current datastore image=",dsImage ||'<none>');
-		if (!dsImage)
-			base.stores.data.save(base, node, dsDummyImage);
-
-       // inform the dashboard UI that we are adding this node
+		//--------------------------------------------------------
+		//Initialize Datastore
+		//--------------------------------------------------------
+//		if (node.multiUser)
+//			base.stores.data.clear(node.id);
+//		else
+//		{
+			// Set a "dummy" object in the data store to ensure 'widget-load' notification
+			let dsImage = base.stores.data.get(node.id);
+			debugLog(node.id+": current datastore image=",dsImage ||'<none>');
+			if (!dsImage)
+				base.stores.data.save(base, node, dsDummyImage);
+//		}
+		//--------------------------------------------------------
+		// inform the dashboard UI that we are adding this node
+		//--------------------------------------------------------
         if (group) {
             group.register(node, config, evts)
         } else {
             node.error('No group configured')
         }
-
+		//--------------------------------------------------------
 		// read theme CSS file, if configured
+		//--------------------------------------------------------
 		config.themeCSS = "";
 		let themeFile = config.themeFile.trim();
 		if (themeFile)
@@ -222,13 +230,19 @@ module.exports = function (RED) {
 				}
 			}
 		}
-
+		//^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 		// Temp workaround - forcing browser 'reload' command to all clients due to NR socket bug
+		//^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 		setTimeout(()=>{
 			debugLog("Sending reload command to clients");
-			node.emit('input', {tbCmd:"tbReloadClient"})
+			broadcastToClients({tbCmd:"tbReloadClient"});
 		}, 2000);
-		
+		//--------------------------------------------------------
+		function broadcastToClients(msg)
+		{
+			debugLog(""+node.id+": broadcasting:",msg);
+			base.emit('tbServerEvent:'+node.id, msg, node);
+		}
 		function debugLog(t1,t2,t3,t4)
 		{
 			if (printToLog)
@@ -236,4 +250,25 @@ module.exports = function (RED) {
 		}
 }
     RED.nodes.registerType('ui-tabulator', UITabulatorNode)
+}
+//---------------------------------------------------------------------------------
+function inMap(map,key,val)
+{
+	const maxMapSize = 10;
+
+	if (map.has(key))
+		return true;
+
+	map.set(key, val);
+	let txt = `inserted to map: key=${key},val=${val}, `;
+	
+	if (map.size > maxMapSize)
+	{
+		const firstElement = map.entries().next().value;
+		map.delete(firstElement[0]);
+		txt = txt.replace('inserted to','replaced in');
+	}
+	//console.log("map=",map);
+	//console.log(txt+'current map size='+map.size);
+	return false;
 }

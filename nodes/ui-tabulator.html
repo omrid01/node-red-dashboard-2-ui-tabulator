@@ -25,12 +25,10 @@ const sampleTblConfig = `{
 			events: { value: "" },
             order: { value: 0 },
 			multiUser:{ value: false },
-//			reloadOnRefresh:{ value: false },
 			themeCSS: { value: "" },	// placeholder for initial load of theme file CSS
 			themeFile: { value: "" },
-//            cssClass: { value: '' },
-//			tblId:{ value: "", validate: function (v) {return (v.trim() === "" || v.match(/^[a-zA-Z_-][a-zA-Z0-9_-]*$/) !== null)} },
-			passthru: { value: false },
+			tblDivId:{ value: "", validate: function (v) {return (v.trim() === "" || v.match(/^[a-zA-Z_-][a-zA-Z0-9_-]*$/) !== null)} },
+//			passthru: { value: false },
 			printToLog: { value: false },	// Tells client if to print console log messages
             width: {
                 value: 0,
@@ -153,39 +151,18 @@ function isValidJSON(str)
 		<label style="display:inline-block" for="node-input-multiUser">Multi-user mode</label>
     </div>
 	<br>
-<!--
-    <div>
-        <input type="checkbox" style="vertical-align:top;" id="node-input-reloadOnRefresh"/>&nbsp
-		<label style="display:inline-block" for="node-input-reloadOnRefresh">Reload data on refresh</label>
-    </div>
-	<div class="form-row">
-        <label for="node-input-theme"><i class="fa fa-list"></i> Theme</label>
-		<select id="node-input-theme">
-			<option value='default'> Default</option>
-			<option value='midnight'> Midnight</option>
-			<option value='simple'> Simple</option>
-			<option value='modern'> Modern</option>
-			<option value='site_dark'> Site Dark</option>
-			<option value='site'> Site</option>
-		</select>
-    </div>
--->
     <div class="form-row">
         <label for="node-input-themeFile"><i class="fa fa-file"></i> Theme File</label>
         <input type="text" id="node-input-themeFile"  placeholder="File name or URL of Tabulator theme CSS file">
     </div>
-<!--
-    <div class="form-row">
-        <label for="node-input-cssClass"><i class="fa fa-code"></i> CSS Class</label>
-        <input type="text" id="node-input-cssClass" disabled placeholder="**under development**">   < !-- Class name(s) (comma-separated string)"> -- >
-    </div>
 	<div class="form-row">
-        <label for="node-input-tblId"><i class="fa fa-tag"></i> Table Id<br>(Optional)</label>
-        <input type="text" id="node-input-tblId">
+        <label for="node-input-tblDivId"><i class="fa fa-tag"></i> DIV Override</label>
+        <input type="text" id="node-input-tblDivId" placeholder="Optional: DIV Id to override default">
     </div>
--->
+<!--
     <div>
         <input type="checkbox" style="vertical-align:top;" id="node-input-passthru"/>&nbsp
 		<label style="display:inline-block" for="node-input-passthru">Pass through messages from input</label>
     </div>
+-->
 </script>

@@ -39,7 +39,7 @@ export default {
 			// Table properties
 			tbl: 		 	null,	// Table object
 			tblReady:	 	false,	// Indicates that table has completed initializing
-			tblId: 		 	"",		// Optional div Id, to allow dynamic CSS injection or access to the table object from other template nodes, via Tabulator.findTable()
+			tblDivId:	 	"",		// Optional, allow table instantiation on a specified Div, & access to the table from other template nodes, via Tabulator.findTable()
 			tblHasDSImage:	false,	// Indicates if there is a datastore image for the table (relevant in shared mode only)
 			tblConfig:	 	null,	// Current (active) table configuration (excluding data)
 			tblStyleMap: 	null, 	// The styles assigned to the table (via the tbSetStyle command)
@@ -57,38 +57,34 @@ export default {
 		if (this.props.themeCSS)
 			loadThemeCSS(this.props.themeCSS,this);
 
-		// Set max table width (else will overflow with no horizontal scroller
-		let maxWidth = this.props.maxWidth.trim();
-		if (maxWidth)
-			$widgetScope.$refs.tabulatorDiv.style.width = maxWidth;
+		this.tblDivId = this.props.tblDivId?.trim() || "";
 
-		// set msg listener
+		// Set max table width (else will overflow with no horizontal scroller
+		let maxWidth = this.props.maxWidth?.trim();
+		if (maxWidth && !this.tblDivId)
+			this.$refs.tabulatorDiv.style.width = maxWidth;
+
+        // tell Node-RED that we're loading a new instance of this widget
+        this.$socket.emit('widget-load', this.id)
+		
+		// ****************************************************************************************
+		// msg listener on input port
+		// ****************************************************************************************
         this.$socket.on('msg-input:' + this.id, (msg) => {
 			if (!msg)
 				return;
 
-// ************** Temp workaround - forcing client reload (due to NR framework bug)  ***********************************************
-			if (msg.tbCmd === "tbReloadClient")
-			{
-				console.log($widgetScope.id+": Received reload request");
-				if (window.tbPrintToLog)
-					$widgetScope.$socket.emit('widget-action', $widgetScope.id,{payload:`${$widgetScope.id}: self-reloading`});
-				setTimeout(()=>location.reload(),100);
-				return;
-			}
-// *********************************************************************************************************************************
-
-			// Special utility msg for testing client/server connections - should always go to all clients
+			 // Special utility msg for testing client/server connections. bypasses all scope constraints
 			if (msg.tbCmd === "tbTestConnection")
 			{
 				processMsg(msg,$widgetScope);
 				return;
 			}
-			
-			// --------  Determine scope and process msg    ------------------------------------------------------------------------------------
-			let msgClientId = msg.hasOwnProperty("_client") && msg._client.socketId ? msg._client.socketId : "";
 
-			// Check if msg includes a specified client scope
+			// --------  Determine scope and process msg    ------------------------------------------------------------------------------------
+			let msgClientId = msg?._client?.socketId || "";
+
+			// Check if msg includes an explicitly-specified client scope
 			if (msg.hasOwnProperty("tbClientScope"))
 			{
 				switch (msg.tbClientScope)
@@ -96,39 +92,60 @@ export default {
 					case "tbAllClients":
 						processMsg(msg,$widgetScope);
 						return;
-					case "tbOriginator":
+					case "tbSameClient":
 						if (msgClientId && msgClientId === $widgetScope.$socket.id)
 						{
-							debugLog("Processing message sent by own client");
+							debugLog("Processing message sent from same client");
 							processMsg(msg,$widgetScope);
 						}
 						return;
-					case "tbNotOriginator":
-						if (msgClientId && msgClientId !== $widgetScope.$socket.id)
+					case "tbNotSameClient":
+						if (msgClientId !== $widgetScope.$socket.id)
 						{
-							debugLog("Processing message sent by another client");
+							debugLog("Processing message sent from different client");
 							processMsg(msg,$widgetScope);
 						}
+						return;
+					case "tbNone":
+					default:
 						return;
 				}
 			}
-
-			// Handle messages if no client Id or this client Id
-			if (!msgClientId || msgClientId === $widgetScope.$socket.id)
+			else if (!msgClientId || msgClientId === $widgetScope.$socket.id)
+				// Handle messages if no client Id or comes from same client
 				processMsg(msg,$widgetScope);
-			else if (msg.multiUserPassThru === true)	// Hidden option (for testing purposes) to forward rejected messages from another client without processing them
-			{
-				msg.payload = "Ignored";
-				$widgetScope.send(msg);
-			}
 		});
+		// ****************************************************************************************
+		// Utility listener for custom server node events
+		// ****************************************************************************************
+		this.$socket.on('tbServerEvent:' + this.id, (msg) => {
 
-        // tell Node-RED that we're loading a new instance of this widget
-        this.$socket.emit('widget-load', this.id)
-		
-		// Triggered when the widget loads there is data for this node in the Node-RED datastore
+//^^^^^^^^^^^^^^ Temp workaround - forcing client reload (due to NR framework bug)  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+			if (msg.tbCmd === "tbReloadClient")
+			{
+				console.log($widgetScope.id+": Received reload request");
+//				if (window.tbPrintToLog)
+//					$widgetScope.$socket.emit('widget-action', $widgetScope.id,{payload:`${$widgetScope.id}: self-reloading`});
+//				setTimeout(()=>location.reload(),5000);
+				location.reload();
+				return;
+			}
+//^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+			switch (msg.tbCmd)
+			{
+				case "tbCellEditSync":
+					processMsg(msg,$widgetScope);
+			}
+			return;
+		});
+		// ****************************************************************************************
+		// msg listener for 'widget-load' event, sent from server when widget is loaded,
+		// including current state from datastore 
+		// ****************************************************************************************
 		this.$socket.on('widget-load:' + this.id, (msg) => {
-			const dsDummyImage = "dummyDSImage";
+			const dsDummyImage = "dummyDSImage";	// workaround: server does not send this event if no data in datastore,
+													// so we force dummy data
 
 			if (!msg || msg === "dummyDSImage")
 			{
@@ -152,6 +169,7 @@ export default {
         /* Make sure, any events you subscribe to on SocketIO are unsubscribed to here */
         this.$socket?.off('widget-load:' + this.id)
         this.$socket?.off('msg-input:' + this.id)
+		this.$socket?.off('tbServerEvent:' + this.id)
     },
 //******************************************************************************************************************************************
     methods: {
@@ -185,12 +203,11 @@ export default {
 			this.tblHasDSImage = true;
             this.$socket.emit('tbClientCommands'+this.id, this.id, dsMsg)
  		},
-		clearDatastore(setDummy,msgId)
+		clearDatastore(msgId)
 		{
 			let dsMsg = {};
             dsMsg.tbClientCmd = 'tbClearDatastore';
 			dsMsg.clientMsgId = msgId;
-			dsMsg.setDummy = setDummy ? true : false;
 			this.tblHasDSImage = false;
             this.$socket.emit('tbClientCommands'+this.id, this.id, dsMsg)
 		},
@@ -222,7 +239,7 @@ function processMsg(msg,$widgetScope)
 			return; 
 		case "tbResetTable":
 			if (!$widgetScope.props.multiUser)  // Clear datastore
-				$widgetScope.clearDatastore(true,msg._msgid);
+				$widgetScope.clearDatastore(msg._msgid);
 			let initObj = parseTblConfig($widgetScope.props.initObj);
 			if (initObj !== null)
 			{
@@ -233,7 +250,7 @@ function processMsg(msg,$widgetScope)
 		case "tbCellEditSync":	// internal command notifying an in-cell edit in another client
 			cellEditSync($widgetScope,msg);
 			return; 
-		// Undocumented utility/testing commands
+		// Undocumented/utility/testing commands
 		//^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 		case "tbTestConnection":
 			msg.payload = "Test Connection";
@@ -259,7 +276,7 @@ function processMsg(msg,$widgetScope)
 			$widgetScope.showDatastore((msg.sendMsg ? true : false),msg._msgid);
 			return; 
 		case "tbClearDatastore":	// **for internal use or testing only**
-			$widgetScope.clearDatastore(true,msg._msgid);
+			$widgetScope.clearDatastore(msg._msgid);
 			return; 
 		case 'tbSaveToDatastore':  // **for testing only**
 			if (!$widgetScope.tbl)
@@ -267,6 +284,7 @@ function processMsg(msg,$widgetScope)
 			else
 				$widgetScope.saveToDatastore(true,$widgetScope.tblConfig,$widgetScope.tbl.getData(),$widgetScope.tblStyleMap,msg._msgid);
 			return; 
+/*
 		case "tbSetTableId":	// internal command to set an Id to the table's HTML Div, to allow direct API access from external nodes
 			let divId = msg.tbTableId ? msg.tbTableId.trim() : "";
 			if (divId === "" || divId.match(/^[a-zA-Z_-][a-zA-Z0-9_-]*$/) !== null)
@@ -278,6 +296,7 @@ function processMsg(msg,$widgetScope)
 				msg.error = "Invalid Table Id";
 			$widgetScope.send(msg);
 			return; 
+*/
 	}
 	//------------------------------------------------------------------
 	// Table commands (accepted only when table is built & ready)
@@ -490,7 +509,10 @@ function createTable(initObj,$widgetScope,msg,styleMap,saveToDS)
 	try  
 	{
 		// create the table
-		$widgetScope.tbl = new Tabulator($widgetScope.$refs.tabulatorDiv, tmpInitObj);
+		if (!$widgetScope.tblDivId)
+			$widgetScope.tbl = new Tabulator($widgetScope.$refs.tabulatorDiv, tmpInitObj);
+		else
+			$widgetScope.tbl = new Tabulator("#"+$widgetScope.tblDivId, tmpInitObj);
 		
 			// console.log("Table created");
 			// $widgetScope.send({payload:"Table created"});

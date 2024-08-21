@@ -54,6 +54,7 @@ msg.tbArgs = [ "age", ">", 12 ];
 The node configuration properties (in the editor):
 * **Name, Group, Size**: - same as in all dashboard 2.0 nodes
 * **Initial Table Configuration**: JSON object with all table & column definitions, and (optional) initial data
+* **Max Width**: sets the visible width of the table
 * **Notifications**: selection of table events which trigger notification messages
 * **Multi-user** mode: (Y/N)
 * **CSS theme**: selection of an optional tabulator CSS Stylesheet (e.g. **_Midnight_**, **_Modern_** etc.)
