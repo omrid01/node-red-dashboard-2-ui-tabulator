@@ -57,7 +57,11 @@ export default {
 		if (this.props.themeCSS)
 			loadThemeCSS(this.props.themeCSS,this);
 
-		this.tblDivId = this.props.tblDivId?.trim() || "";
+		if (this.props.tblDivId);
+		{
+			this.tblDivId = this.props.tblDivId?.trim() || "";
+//			this.$refs.tabulatorDiv.style.display = "none";  // hide the original DIV
+		}
 
 		// Set max table width (else will overflow with no horizontal scroller
 		let maxWidth = this.props.maxWidth?.trim();
@@ -124,9 +128,8 @@ export default {
 			if (msg.tbCmd === "tbReloadClient")
 			{
 				console.log($widgetScope.id+": Received reload request");
-//				if (window.tbPrintToLog)
-//					$widgetScope.$socket.emit('widget-action', $widgetScope.id,{payload:`${$widgetScope.id}: self-reloading`});
-//				setTimeout(()=>location.reload(),5000);
+
+				// setTimeout(()=>location.reload(),5000);
 				location.reload();
 				return;
 			}
@@ -182,11 +185,11 @@ export default {
 			// Instead of widget-action, we send the message as a custom event to the server, allowing it to filter duplicate messages
 			//(from multiple clients, in shared mode) before forwarding
 			if (!msg.tbDoNotReply)
-				this.$socket.emit('tbSendMessage'+this.id, this.id, msg)
+				this.$socket.emit('tbSendMessage'/*+this.id*/, this.id, msg)
         },
 		sendClientCommand(cmd,msg) {
             msg.tbClientCmd = cmd;
-            this.$socket.emit('tbClientCommands'+this.id, this.id, msg)
+            this.$socket.emit('tbClientCommands'/*+this.id*/, this.id, msg)
         },
 		saveToDatastore(exists,config,data,styleMap,saveId)	{
 			let dsMsg = {};
@@ -201,7 +204,7 @@ export default {
 				styleMap: styleMap
 			}
 			this.tblHasDSImage = true;
-            this.$socket.emit('tbClientCommands'+this.id, this.id, dsMsg)
+            this.$socket.emit('tbClientCommands'/*+this.id*/, this.id, dsMsg)
  		},
 		clearDatastore(msgId)
 		{
@@ -209,7 +212,7 @@ export default {
             dsMsg.tbClientCmd = 'tbClearDatastore';
 			dsMsg.clientMsgId = msgId;
 			this.tblHasDSImage = false;
-            this.$socket.emit('tbClientCommands'+this.id, this.id, dsMsg)
+            this.$socket.emit('tbClientCommands'/*+this.id*/, this.id, dsMsg)
 		},
 		showDatastore(sendMsg,msgId)
 		{
@@ -217,7 +220,7 @@ export default {
             dsMsg.tbClientCmd = 'tbShowDatastore';
 			dsMsg.clientMsgId = msgId;
 			dsMsg.sendMsg = sendMsg;
-            this.$socket.emit('tbClientCommands'+this.id, this.id, dsMsg)
+            this.$socket.emit('tbClientCommands'/*+this.id*/, this.id, dsMsg)
 		}
 	}
 }
@@ -254,21 +257,21 @@ function processMsg(msg,$widgetScope)
 		//^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 		case "tbTestConnection":
 			msg.payload = "Test Connection";
-			msg.serverNodeId = $widgetScope.id;
-			msg.clientId = $widgetScope.$socket.id;
+			msg.nodeId = $widgetScope.id;
+			msg.clientSockId = $widgetScope.$socket.id;
 			if (!msg.listener)
 				msg.listener = 'tbClientCommands';
 			switch (msg.listener)
 			{
-				case 'widget-action':
-					$widgetScope.$socket.emit('widget-action', $widgetScope.id, msg)
-					break;
+				//case 'widget-action':
+				//	$widgetScope.$socket.emit('widget-action', $widgetScope.id, msg)
+				//	break;
 				case 'tbSendMessage':
-					$widgetScope.$socket.emit('tbSendMessage'+$widgetScope.id, $widgetScope.id, msg)
+					$widgetScope.$socket.emit('tbSendMessage'/*+$widgetScope.id*/, $widgetScope.id, msg)
 					break;
 				case 'tbClientCommands':
 					msg.tbClientCmd = 'tbTestConnection';
-					$widgetScope.$socket.emit('tbClientCommands'+$widgetScope.id, $widgetScope.id, msg)
+					$widgetScope.$socket.emit('tbClientCommands'/*+$widgetScope.id*/, $widgetScope.id, msg)
 			}
 			console.log("Sent connection test ping to listener "+msg.listener);
 			return; 
@@ -532,7 +535,7 @@ function createTable(initObj,$widgetScope,msg,styleMap,saveToDS)
 			
 			if (initObj.hasOwnProperty("index"))	// overriding the default 'id' field as the row identifier
 				$widgetScope.rowIdField = initObj.index;
-			
+
 			// Set notifications for the selected events 
 			setEventNotifications($widgetScope);
 
@@ -996,6 +999,11 @@ function setEventNotifications($widgetScope)
 			case "rowTap":
 			case "rowDblTap":
 			case "rowTapHold":
+				$widgetScope.tbl.on(ev, function(evObj,row){	// row = row component
+					let eventMsg = rowEventMsg(row,ev,$widgetScope.$socket.id);
+					$widgetScope.send(eventMsg);
+				});
+				break;
 			case "rowAdded":  	// sent upon addRow, updateOrAddRow, addData or updateOrAddData
 			case "rowUpdated":	// sent only upon programmatic data update (updateRow, updateOrAddRow, updateData or updateOrAddData), not in-cell edits
 			case "rowDeleted": // sent upon DeleteRow
@@ -1232,7 +1240,13 @@ function cloneObj(obj)
 		return clone;
 	}
 	catch (err)	{
-		console.error("Object cloning failed:",err);
+		try	{
+			clone = JSON.parse(JSON.stringify(obj));
+			return clone;
+		}
+		catch (err)	{
+			console.error("Object cloning failed:",err);
+		}
 	}
 	return null;
 }

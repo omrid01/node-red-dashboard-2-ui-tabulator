@@ -5,14 +5,14 @@ module.exports = function (RED) {
         RED.nodes.createNode(this, config)
 
         const node = this;
-		console.info("ui-tabulator: creating ui-tabulator server node "+node.id);
-
 		const dsDummyImage = "dummyDSImage";
 
 		// Set debug log policy
 		let e = process.env.TBDEBUG;
 		var printToLog  = (e && e.toLowerCase() === 'true') ? true : false;
 		config.printToLog = printToLog;
+
+		debugLog("ui-tabulator: creating ui-tabulator server node "+node.id);
 
 		// Saving last msg id's to allow filtering duplicate messages (from concurrent open clients)
 		node.multiUser = config.multiUser;
@@ -41,13 +41,17 @@ module.exports = function (RED) {
             onSocket: {
 				// Function arguments: conn = socketId, id = node.id
 				//-------------------------------------------------------------------------------------------------
-				//['widget-action']: function  (conn, id, msg) {
+				//'widget-action': function  (conn, id, msg) {
 				//	console.log("'widget action' msg:",msg)
                 //},
 
 				//-------------------------------------------------------------------------------------------------
 				// Generic response sender. filters duplicate messages (from multiple open clients, in shared mode)
-                ['tbSendMessage'+node.id]: function (conn, id, msg) {
+                //['tbSendMessage'+node.id]: function (conn, id, msg) { //   listener per ui-tabulator instance
+                'tbSendMessage': function (conn, id, msg) {	            // single listener for ui-tabulator instances (less impact on socket) 
+					if (id !== node.id)
+						return;
+					
 					// Table notifications
 					//--------------------
 					if (msg.topic === "tbNotification")
@@ -64,7 +68,7 @@ module.exports = function (RED) {
 					{
 						// Connection Test
 						case "tbTestConnection":
-							console.log("ui-tabulator connection test: ping from node="+msg.serverNodeId+", client="+msg.clientId+", on listener "+msg.listener);
+							console.log("ui-tabulator connection test: ping from node="+msg.nodeId+", sockId="+msg.clientSockId+", on listener "+msg.listener);
 							node.send(msg);
 							break;
 						default: 
@@ -76,7 +80,11 @@ module.exports = function (RED) {
 
 				//-------------------------------------------------------------------------------------------------
 				// Internal commands from the client
-                ['tbClientCommands'+node.id]: function (conn, id, msg) {
+                //['tbClientCommands'+node.id]: function (conn, id, msg) {
+                'tbClientCommands': function (conn, id, msg) {
+					if (id !== node.id)
+						return;
+
 					//console.log("internal client command",msg)
 					switch (msg.tbClientCmd)
 					{
@@ -128,7 +136,7 @@ module.exports = function (RED) {
 						// Test client/server-node connectivity
 						//---------------------------------------------------------------------
 						case 'tbTestConnection':
-							console.log("ui-tabulator connection test: ping from node="+msg.serverNodeId+", client="+msg.clientId+", on listener "+msg.listener);
+							console.log("ui-tabulator connection test: ping from node="+msg.nodeId+", sockId="+msg.clientSockId+", on listener "+msg.listener);
 							node.send(msg);
 							break;
 					}
