@@ -1,6 +1,6 @@
 {
     "name": "@omrid01/node-red-dashboard-2-table-tabulator",
-    "version": "0.4.2",
+    "version": "0.5.0",
     "description": "Table node, using Tabulator-tables package, for Node-RED Dashboard 2.0",
     "keywords": [
         "node-red",
@@ -69,7 +69,7 @@
         }
     },
     "node-red-dashboard-2": {
-        "version": "1.11.1",
+        "version": ">=1.17.1",
         "widgets": {
             "ui-tabulator": {
                 "output": "ui-tabulator.umd.js",

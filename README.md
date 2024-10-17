@@ -4,18 +4,18 @@ A short summary of the node's design concepts, functionality & configuration opt
 # ui-tabulator
 ![example-pic](https://github.com/omrid01/node-red-dashboard-2-table-tabulator/assets/100078999/2e7bac34-94e3-49c1-bd69-cdb3dade5abd)
 
-The **ui-tabulator** custom node uses the popular [Tabulator](https://www.tabulator.info) JavaScript package, for updating, querying & presentation of UI tables.
+The **ui-tabulator** custom node uses the popular [Tabulator](https://www.tabulator.info) JavaScript package, for updating, presenting & querying UI tables.
 > **Note:** the node comes in addition to, not replacing, dashboard V2.0's native vue-based **table** node.
 
 #### General Overview
 * The node serves as a smart wrapper containing a Tabulator (table) object. For the most part, it calls the Tabulator API as-is (as defined in the [Tabulator Documentation](https://tabulator.info/docs/6.2)).
-* The node enables automatic instantiation of the table (with user-defined configuration & initial data), as well as to dynamically create/destroy  tables in runtime.
+* The node enables automatic instantiation of the table (with user-defined configuration & initial data), as well as to dynamically create/modify/destroy  tables in runtime.
 * Interface to the node is through messages (regular Node-red **msg** objects). The msg specifies a command (and arguments), and returns the table's response
-* The node accepts data-setting commands (e.g. setData, addData, updateData, deleteData etc.) as well as data-query commands (getData, searchData etc.)
-* In addition, the node can send unsolicited event messages for selected table events (cell & row click/double-click, cell edit etc.)
+* The table accepts data-setting commands (e.g. setData, addData, updateData, deleteData etc.) as well as data-query commands (getData, searchData etc.), as well as in-cell data edit (from the UI).
+* In addition, the table can send unsolicited event messages for selected table events (cell & row click/double-click, cell edit etc.)
 * By default, the table operates in **_shared_** mode, i.e. a common table image (data + styling) in all concurrent dashboard clients. The table image is also cached in the Node-RED datastore, and reloaded upon browser open, refresh etc.  
 The node also supports a **_Multi-User_** mode, which maintains independent, client-specific table data with "private" messaging.
-> **Note:** even in **shared** mode, the node enables client-specific appearance & interaction (e.g. sorting, filtering, row selection etc.) on top of the common table image.
+
 #### Message Examples
 * Data-setting command example
 ```
@@ -57,18 +57,24 @@ The node configuration properties (in the editor):
 * **Max Width**: sets the visible width of the table
 * **Notifications**: selection of table events which trigger notification messages
 * **Multi-user** mode: (Y/N)
+* **Row-Id validation/duplication** check (Y/N)
 * **CSS theme**: selection of an optional tabulator CSS Stylesheet (e.g. **_Midnight_**, **_Modern_** etc.)
-* **Pass through message from input**: if checked, forwards the incoming message as-is to the output port, **_in addition_** to the node'e response
+* **DIV Override**: optional: enables to specify a specific HTML DIV Id in which the table will be created, overriding the default DIV, auto-allocated by the Vue framework
+
 #### Architectural Concepts in Multi-Client Environment
-Tabulator table objects are instantiated in the client (browser) page. Hence, when there are multiple dashboard clients, a single **_ui-tabulator_** node instance, is associated to multiple table objects. Per Node-RED's framework, every message sent to a **_ui-tabulator_** node in a flow, is replicated to all of its **_widgets_** (client UI elements, i.e. table objects). If the table object responds, the flow will receive multiple, identical responses (one per client). To enable a **_Shared_** mode, where all table widgets are synchronized and have a common data image, we do the following:
-* Data-setting & styling commands sent from the **_ui-tabulator_** node in flow to all table widgets in parallel, thus appying the same changes on the widgets
+Tables are created as **_widgets_** on the client (browser) page. Hence, in case of multiple dashboard clients, a single **_ui-tabulator_** node is associated to multiple table widgets. Per Node-RED's framework, every message sent to a **_ui-tabulator_** node in a flow, is replicated to all of its widgets. If the table object responds, the flow will receive multiple, identical responses (one per client). To enable a **_Shared_** mode, where all table widgets are synchronized and have a common data image, we do the following:
+* Data-setting & styling commands sent from the **_ui-tabulator_** node in flow to all table widgets in parallel, thus applying the same changes on the widgets
 * The (identical) table responses to command messages are grouped by **_msgid_**, and only a single response is returned to the flow
 * When a user changes table data directly on the UI of any client, an update notification is automatically sent to all other clients
 * The current table data image is always saved in the Node-RED datastore, automatically restoring the table image upon client open/refresh.
 
-Having said the above, some table presentation aspects (on top of the common data image) are user-related by nature, and are not synchronized. For example, users may want to set their own filtering/sorting, or select specific rows for further actions. In such cases, each client table returns a different response to data query commands. In such cases, the command should be scoped to a specific table widget (by specifying the client Id, or initiating the command from a dashboard objet, e.g. button, on the same client)
+Having said the above, some table presentation aspects (on top of the common data image) are user-related by nature, and are not synchronized. For example, users may want to set their own filtering/sorting, or select specific rows for further actions. In such cases, each client table may return a different response to data query commands. For this, the command should be scoped to a specific table widget (by specifying the client Id, or initiating the command from a dashboard objet, e.g. button, on the same client)
+
+#### Known Issues
+Upon server restart, deploy and reconnect, sometimes the client's socket listeners in the Node-RED framework are not restored properly. As a temporary workaround, until this is fixed in Node-RED, each client page automatically reloads itself once upon reconnection (showing a little "flicker").
+
 #### Node Dependencies
 * Node-JS version >= 18
 * Node-red version >= 3.10
-* Node-red dashboard 2.0, version >= 1.11.1
+* Node-red dashboard 2.0, version >= 1.17.1
 * Tabulator version >= 6.2 (comes bundled in the node installation)

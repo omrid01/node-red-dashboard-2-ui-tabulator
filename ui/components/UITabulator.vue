@@ -2,7 +2,6 @@
     <!-- Component must be wrapped in a block so props such as className and style can be passed in from parent    -->
     <div className="ui-tabulator-wrapper">
 		<div ref="tabulatorDiv"></div>
-		<!-- Has DS image: {{tblHasDSImage}}, Multi-user: {{props.multiUser}}  -->
     </div>
  </template>
 
@@ -27,7 +26,7 @@ export default {
     computed: {
         ...mapState('data', ['messages'])
     },
-//******************************************************************************************************************************************
+// ******************************************************************************************************************************************
     data () {
         return {
             vuetifyStyles: [
@@ -39,20 +38,33 @@ export default {
 			// Table properties
 			tbl: 		 	null,	// Table object
 			tblReady:	 	false,	// Indicates that table has completed initializing
-			tblDivId:	 	"",		// Optional, allow table instantiation on a specified Div, & access to the table from other template nodes, via Tabulator.findTable()
-			tblHasDSImage:	false,	// Indicates if there is a datastore image for the table (relevant in shared mode only)
-			tblConfig:	 	null,	// Current (active) table configuration (excluding data)
-			tblStyleMap: 	null, 	// The styles assigned to the table (via the tbSetStyle command)
-			rowIdField: 	"id"	// The name of the field which holds the unique row Id (the default is 'id', but can be overriden)
+			tblDivId:		"",		// Optional, allow table instantiation on a specified Div, & access to the table from other template nodes, via Tabulator.findTable()
+			rowIdField:		"id",	// The name of the field which holds the unique row Id (the default is 'id', but can be overriden)
+			origTblConfig:	null,	// holds the original table configuration & data, as configured in the node (converted from JSON to an object). null=no tbl config in node
+			currTblConfig:	null,	// Current (active) table configuration (excluding data). null = no table widget
+			tblStyleMap:	null 	// The styles assigned to the table (via the tbSetStyle command)
 		}
     },
-//******************************************************************************************************************************************
+// ******************************************************************************************************************************************
     mounted () {
 		var $widgetScope = this; // Save the 'this' scope for socket listener, callbacks, external functions etc.
 		
 		window.tbPrintToLog = this.props.printToLog;
 		debugLog(`***ui-tabulator node ${this.id} mounted on client ${this.$socket.id}, debug=${window.tbPrintToLog?"on":"off"}`);
 
+		// parse the original table configuration & data (which were configured in the node)
+		const cfgStr = this.props.initObj?.trim();
+		if (cfgStr)
+		{
+			try  {
+				this.origTblConfig = JSON.parse(cfgStr);
+			}
+			catch (err) {
+				console.error(this.id+": Invalid table configuration:",err);
+				this.origTblConfig = null;
+			}	
+		}
+		
 		// Load CSS theme
 		if (this.props.themeCSS)
 			loadThemeCSS(this.props.themeCSS,this);
@@ -64,7 +76,7 @@ export default {
 		}
 
 		// Set max table width (else will overflow with no horizontal scroller
-		let maxWidth = this.props.maxWidth?.trim();
+		const maxWidth = this.props.maxWidth?.trim();
 		if (maxWidth && !this.tblDivId)
 			this.$refs.tabulatorDiv.style.width = maxWidth;
 
@@ -72,59 +84,22 @@ export default {
         this.$socket.emit('widget-load', this.id)
 		
 		// ****************************************************************************************
-		// msg listener on input port
+		// listener for flow messages on input port
 		// ****************************************************************************************
         this.$socket.on('msg-input:' + this.id, (msg) => {
-			if (!msg)
+			if (!msg || !acceptMsg(msg,$widgetScope))
 				return;
-
-			 // Special utility msg for testing client/server connections. bypasses all scope constraints
-			if (msg.tbCmd === "tbTestConnection")
-			{
-				processMsg(msg,$widgetScope);
-				return;
-			}
-
-			// --------  Determine scope and process msg    ------------------------------------------------------------------------------------
-			let msgClientId = msg?._client?.socketId || "";
-
-			// Check if msg includes an explicitly-specified client scope
-			if (msg.hasOwnProperty("tbClientScope"))
-			{
-				switch (msg.tbClientScope)
-				{
-					case "tbAllClients":
-						processMsg(msg,$widgetScope);
-						return;
-					case "tbSameClient":
-						if (msgClientId && msgClientId === $widgetScope.$socket.id)
-						{
-							debugLog("Processing message sent from same client");
-							processMsg(msg,$widgetScope);
-						}
-						return;
-					case "tbNotSameClient":
-						if (msgClientId !== $widgetScope.$socket.id)
-						{
-							debugLog("Processing message sent from different client");
-							processMsg(msg,$widgetScope);
-						}
-						return;
-					case "tbNone":
-					default:
-						return;
-				}
-			}
-			else if (!msgClientId || msgClientId === $widgetScope.$socket.id)
-				// Handle messages if no client Id or comes from same client
-				processMsg(msg,$widgetScope);
+			processMsg(msg,$widgetScope);
 		});
+		
 		// ****************************************************************************************
-		// Utility listener for custom server node events
+		// Utility listener for custom server node notifications
 		// ****************************************************************************************
 		this.$socket.on('tbServerEvent:' + this.id, (msg) => {
 
-//^^^^^^^^^^^^^^ Temp workaround - forcing client reload (due to NR framework bug)  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+			//^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+			// Temp workaround - forcing client reload (due to NR framework bug)
+			//-----------------------------------------------------------------
 			if (msg.tbCmd === "tbReloadClient")
 			{
 				console.log($widgetScope.id+": Received reload request");
@@ -133,39 +108,21 @@ export default {
 				location.reload();
 				return;
 			}
-//^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+			//^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-			switch (msg.tbCmd)
-			{
-				case "tbCellEditSync":
-					processMsg(msg,$widgetScope);
-			}
-			return;
+			if (!msg || !acceptMsg(msg,$widgetScope))
+				return;
+			processMsg(msg,$widgetScope);
 		});
-		// ****************************************************************************************
-		// msg listener for 'widget-load' event, sent from server when widget is loaded,
-		// including current state from datastore 
-		// ****************************************************************************************
+		
+		// ***************************************************************************************************
+		// msg listener for 'widget-load' event, sent from server when widget is loaded (with datastore image)
+		// ***************************************************************************************************
 		this.$socket.on('widget-load:' + this.id, (msg) => {
-			const dsDummyImage = "dummyDSImage";	// workaround: server does not send this event if no data in datastore,
-													// so we force dummy data
-
-			if (!msg || msg === "dummyDSImage")
-			{
-				console.log(this.id+": Data store is empty, creating table from node configuration");
-				let initObj = parseTblConfig(this.props.initObj);
-				if (initObj !== null)
-					createTable(initObj,$widgetScope,null,null,false);
-			}
-			else
-			{
-				console.log(this.id+": Creating table from datastore image");
-				this.tblHasDSImage = true;
-				createTblFromDatastore(msg,this);
-			}
+			initialTableLoad(msg,this)
         })
     },
-//******************************************************************************************************************************************
+// ******************************************************************************************************************************************
     unmounted () {
 		destroyTable(this,null);
 
@@ -174,7 +131,7 @@ export default {
         this.$socket?.off('msg-input:' + this.id)
 		this.$socket?.off('tbServerEvent:' + this.id)
     },
-//******************************************************************************************************************************************
+// ******************************************************************************************************************************************
     methods: {
         //  widget-action just sends a msg to Node-RED, it does not store the msg state server-side
         //  alternatively, you can use widget-change, which will also store the msg in the Node's datastore
@@ -182,8 +139,8 @@ export default {
 		send(msg) {
 			// this.$socket.emit('widget-action', this.id, msg)
 			
-			// Instead of widget-action, we send the message as a custom event to the server, allowing it to filter duplicate messages
-			//(from multiple clients, in shared mode) before forwarding
+			// Instead of emitting to 'widget-action', we send the message as a custom event to the server, allowing the server to filter duplicate messages
+			//(from concurrent clients, in shared mode)
 			if (!msg.tbDoNotReply)
 				this.$socket.emit('tbSendMessage'/*+this.id*/, this.id, msg)
         },
@@ -191,34 +148,32 @@ export default {
             msg.tbClientCmd = cmd;
             this.$socket.emit('tbClientCommands'/*+this.id*/, this.id, msg)
         },
-		saveToDatastore(exists,config,data,styleMap,saveId)	{
+		saveToDatastore(exists,config,data,styleMap,clientMsgId)	{
 			let dsMsg = {};
             dsMsg.tbClientCmd = 'tbSaveToDatastore';
-			dsMsg.saveId = saveId;
+			dsMsg.clientMsgId = clientMsgId;
 			dsMsg.payload = {
 				timestamp: Date.now(),
-				saveId: saveId,
+				clientMsgId: clientMsgId,
 				exists: exists,
-				config: config,	// null = use default configuration as defined in the node
+				config: config,
 				data:   data,
 				styleMap: styleMap
 			}
-			this.tblHasDSImage = true;
             this.$socket.emit('tbClientCommands'/*+this.id*/, this.id, dsMsg)
  		},
-		clearDatastore(msgId)
+		clearDatastore(clientMsgId)
 		{
 			let dsMsg = {};
             dsMsg.tbClientCmd = 'tbClearDatastore';
-			dsMsg.clientMsgId = msgId;
-			this.tblHasDSImage = false;
+			dsMsg.clientMsgId = clientMsgId;
             this.$socket.emit('tbClientCommands'/*+this.id*/, this.id, dsMsg)
 		},
-		showDatastore(sendMsg,msgId)
+		showDatastore(sendMsg,clientMsgId)
 		{
 			let dsMsg = {};
             dsMsg.tbClientCmd = 'tbShowDatastore';
-			dsMsg.clientMsgId = msgId;
+			dsMsg.clientMsgId = clientMsgId;
 			dsMsg.sendMsg = sendMsg;
             this.$socket.emit('tbClientCommands'/*+this.id*/, this.id, dsMsg)
 		}
@@ -227,10 +182,59 @@ export default {
 // ******************************************************************************************************************************************
 // My functions
 // ******************************************************************************************************************************************
+// Determine if the client should accept the incoming message
+function acceptMsg(msg,$widgetScope)
+{
+	 // Special utility msg for testing client/server connections. bypasses all scope constraints
+	if (msg.tbCmd === "tbTestConnection")
+		return true;
+
+	let msgClientId = msg?._client?.socketId || "";  // get client Id
+
+	// Check if msg includes an explicitly-specified client scope
+	if (msg.hasOwnProperty("tbClientScope"))
+	{
+		switch (msg.tbClientScope)
+		{
+			case "tbAllClients":
+				return true;
+			case "tbSameClient":
+				return (msgClientId && msgClientId === $widgetScope.$socket.id);
+			case "tbNotSameClient":
+				return (msgClientId !== $widgetScope.$socket.id);
+			case "tbNone":
+			default:
+				return false;
+		}
+	}
+	
+	// Always accept msg if not from a specific client
+	if (!msgClientId)
+		return true;
+		
+	// When msg from specific client, accept per shared/multiUser mode
+	if ($widgetScope.props.multiUser)  // in multi-user, accept only from own client
+		return (msgClientId === $widgetScope.$socket.id);
+	else
+	{
+		// in shared mode, accept data-changing messages even if originated by other clients
+		const changeMsgs = [
+			"tbCreateTable", "tbResetTable", "tbDestroyTable", "destroy",
+			"tbSetStyle", "tbClearStyles",
+			"addRow", "updateRow", "updateOrAddRow", "deleteRow",
+			"addData", "setData", "replaceData", "updateData", "updateOrAddData", "clearData"
+		];
+		if (changeMsgs.includes(msg.tbCmd))
+			return true;
+		else
+			return (msgClientId === $widgetScope.$socket.id);
+	}
+}
+// ********************************************************************************************************************
 function processMsg(msg,$widgetScope)
 {
 	delete msg.error;
-	let cmd = msg.tbCmd;
+	const cmd = msg.tbCmd;
 	//------------------------------------------------------------------
 	// Node commands
 	//------------------------------------------------------------------
@@ -241,20 +245,18 @@ function processMsg(msg,$widgetScope)
 			createTable(msg.tbInitObj,$widgetScope,msg,null,true);
 			return; 
 		case "tbResetTable":
+			debugLog($widgetScope.id+": reloading table from node configuration");
 			if (!$widgetScope.props.multiUser)  // Clear datastore
 				$widgetScope.clearDatastore(msg._msgid);
-			let initObj = parseTblConfig($widgetScope.props.initObj);
-			if (initObj !== null)
-			{
-				debugLog($widgetScope.id+": resetting table from node configuration");
-				createTable(initObj,$widgetScope,msg,null,false);
-			}
+			createTable($widgetScope.origTblConfig,$widgetScope,msg,null,false);
 			return;
 		case "tbCellEditSync":	// internal command notifying an in-cell edit in another client
+			debugLog($widgetScope.id+": received cell edit sync");
 			cellEditSync($widgetScope,msg);
 			return; 
-		// Undocumented/utility/testing commands
-		//^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+		// Utility/testing commands
+		//-------------------------
 		case "tbTestConnection":
 			msg.payload = "Test Connection";
 			msg.nodeId = $widgetScope.id;
@@ -277,15 +279,6 @@ function processMsg(msg,$widgetScope)
 			return; 
 		case 'tbShowDatastore':
 			$widgetScope.showDatastore((msg.sendMsg ? true : false),msg._msgid);
-			return; 
-		case "tbClearDatastore":	// **for internal use or testing only**
-			$widgetScope.clearDatastore(msg._msgid);
-			return; 
-		case 'tbSaveToDatastore':  // **for testing only**
-			if (!$widgetScope.tbl)
-				$widgetScope.saveToDatastore(false,null,null,null,msg._msgid);
-			else
-				$widgetScope.saveToDatastore(true,$widgetScope.tblConfig,$widgetScope.tbl.getData(),$widgetScope.tblStyleMap,msg._msgid);
 			return; 
 /*
 		case "tbSetTableId":	// internal command to set an Id to the table's HTML Div, to allow direct API access from external nodes
@@ -317,69 +310,82 @@ function processMsg(msg,$widgetScope)
 		//------------------------------------------------------------------
 		case "tbDestroyTable":
 		case "destroy":  // Overloads Tabulator.destroy(), to enable graceful cleanup
-			destroyTable($widgetScope,msg);
-			if (!$widgetScope.props.multiUser)
-				$widgetScope.saveToDatastore(false,null,null,null,msg._msgid);
+			destroyTable($widgetScope,msg,true);
 			return; 
 		case "tbSetStyle":
 			setStyle(msg.tbScope,msg.tbStyles,$widgetScope,msg);
 			return; 
 		case "tbClearStyles":
-			$widgetScope.tblStyleMap = null;
-			let data = $widgetScope.tbl.getData();
-
-			if (!$widgetScope.props.multiUser && $widgetScope.tblHasDSImage)
-				$widgetScope.saveToDatastore(true,$widgetScope.tblConfig,data,null,msg._msgid);
-			
-			debugLog($widgetScope.id+": refreshing table with current config & data");
-			let cfg = cloneObj($widgetScope.tblConfig);
-			cfg.data = data;
-			createTable(cfg,$widgetScope,msg,null,false);
+			debugLog($widgetScope.id+": clearing styles, reloading table with current config & data");
+			let cfg = cloneObj($widgetScope.currTblConfig);
+			cfg.data = $widgetScope.tbl.getData();
+			createTable(cfg,$widgetScope,msg,null,true);
 			return;
 		case "tbSetGroupBy":
 			setGroupBy($widgetScope,msg);
 			return;
 		//------------------------------------------------------------------
 		// Managed Tabulator API calls
-		//------------------------------------------------------------------
-		// Data-changing commands - called Async
-		//------------------------------------------------------------------
+		//---------------------------------------------------------------------------------
+		// Data-changing commands - called Async (response message is sent by the callback)
+		//---------------------------------------------------------------------------------
 		case "updateRow":
 		case "updateOrAddRow":
-			tabulatorAsyncAPI(cmd,msg.tbArgs,msg,$widgetScope);	// response is sent in a callback
+			if ($widgetScope.props.validateRowIds && msg.tbArgs[1].hasOwnProperty($widgetScope.rowIdField))
+			{
+				const row = msg.tbArgs[1];
+				if (!checkAddedDupRows([row],$widgetScope))
+				{
+					msg.error = "Duplicate row Id";
+					$widgetScope.send(msg);
+					return;
+				}
+			}
+			tabulatorAsyncAPI(cmd,msg.tbArgs,msg,$widgetScope);
 			return;
 		case "setData":
 		case "replaceData":
 		case "updateData":
 		case "updateOrAddData":
-			if (!checkRowIds(msg.tbArgs[0],$widgetScope.rowIdField))
+			if ($widgetScope.props.validateRowIds && !checkInputRowIds(msg.tbArgs[0],$widgetScope.rowIdField))
 			{
 				msg.error = "Duplicate or invalid row Id's";
 				$widgetScope.send(msg);
 			}
 			else
-				tabulatorAsyncAPI(cmd,msg.tbArgs,msg,$widgetScope);	// response is sent in a callback
+				tabulatorAsyncAPI(cmd,msg.tbArgs,msg,$widgetScope);
 			return;
 		case "addData":
-			if (!checkRowIds(msg.tbArgs[0],$widgetScope.rowIdField) || !checkAddedRows(msg.tbArgs[0],$widgetScope))
+			if ($widgetScope.props.validateRowIds && (!checkInputRowIds(msg.tbArgs[0],$widgetScope.rowIdField) || !checkAddedDupRows(msg.tbArgs[0],$widgetScope)))
 			{
 				msg.error = "Duplicate or invalid row Id's";
 				$widgetScope.send(msg);
 			}
 			else
-				tabulatorAsyncAPI(cmd,msg.tbArgs,msg,$widgetScope);	// response is sent in a callback
+				tabulatorAsyncAPI(cmd,msg.tbArgs,msg,$widgetScope);
 			return;
 		case "addRow":
-			if (!checkAddedRows([msg.tbArgs[0]],$widgetScope))
+			if ($widgetScope.props.validateRowIds)
 			{
-				msg.error = "Duplicate or invalid row Id";
-				$widgetScope.send(msg);
+				const row = msg.tbArgs[0];
+				const idField = $widgetScope.rowIdField;
+				if (!row || !row.hasOwnProperty(idField) || row[idField] == undefined || row[idField] == null)
+				{
+					msg.error = "Invalid or missing row Id";
+					$widgetScope.send(msg);
+					return;
+				}
+				if (!checkAddedDupRows([row],$widgetScope))
+				{
+					msg.error = "Duplicate row Id";
+					$widgetScope.send(msg);
+					return;
+				}
 			}
-			else
-				tabulatorAsyncAPI(cmd,msg.tbArgs,msg,$widgetScope);	// response is sent in a callback
+			tabulatorAsyncAPI(cmd,msg.tbArgs,msg,$widgetScope);
 			return;
 		case "deleteRow":
-			tabulatorAsyncAPI(cmd,msg.tbArgs,msg,$widgetScope);	// response is sent in a callback
+			tabulatorAsyncAPI(cmd,msg.tbArgs,msg,$widgetScope);
 			return;
 		//------------------------------------------------------------------
 		// Data-changing commands - called Sync
@@ -414,9 +420,9 @@ function processMsg(msg,$widgetScope)
 		// Read-only commands (returning data) - called sync with special result parsing
 		//------------------------------------------------------------------------------
 		case "getRow":
-			tabulatorSyncAPI(cmd,msg.tbArgs,msg,$widgetScope,function(retObj,msg){  // applies parser func on returned row component
-				if (retObj)	// Here it is a row component
-					msg.payload = retObj.getData()
+			tabulatorSyncAPI(cmd,msg.tbArgs,msg,$widgetScope,function(rowComponent,msg){  // applies parser func on returned row component
+				if (rowComponent)
+					msg.payload = rowComponent.getData();
 				else
 					msg.error = "Invalid Row Id";
 			});
@@ -432,15 +438,21 @@ function processMsg(msg,$widgetScope)
 				$widgetScope.send(msg);
 				return;
 			}
-			tabulatorFreehandAPI(cmd,msg.tbArgs,msg,$widgetScope);  //send response happens inside
+			tabulatorFreehandAPI(cmd,msg.tbArgs,msg,$widgetScope);
 			return;
 	}
 }
+// ********************************************************************************************************************
 function updateAndRespond(msg,$widgetScope)
 {
+	//---------------------------------------------------------------------------------------------------------
+	// Generic post-command handler, which:
+	//   - for 'change' commands (in shared mode), updates the table's style map (if needed), and the datastore
+	//   - sends a response command
+	//---------------------------------------------------------------------------------------------------------
 	if (!$widgetScope.props.multiUser)
 	{
-		// Update style map, if needed
+		// Update style map, in case rows have been added or deleted
 		let map = $widgetScope.tblStyleMap;
 		if (map)
 		{
@@ -456,11 +468,11 @@ function updateAndRespond(msg,$widgetScope)
 				case "updateOrAddData":
 					if (map.rows.length > 0)
 					{
-						let data = tbl.getData();
+						const tblRows = tbl.getRows();
 						map.rows = map.rows.filter((row) => {		// keep only row-style objects of rows which exists in the new data
-							let found = data.find((e) => e[rowIdField] == row.rowId);  // not ===
+							let index = tblRows.findIndex((rowComp) => rowComp.getCell(rowIdField).getValue() == row.rowId);  // not ===
 							//console.log("row",row.rowId,found ? " found" : " not found");
-							return found ? true : false;
+							return index >= 0 ? true : false;
 						});
 					}
 					applyFromStyleMap(map,tbl);
@@ -482,40 +494,66 @@ function updateAndRespond(msg,$widgetScope)
 					break;
 			}
 		}
-		$widgetScope.saveToDatastore(true,$widgetScope.tblConfig,$widgetScope.tbl.getData(),$widgetScope.tblStyleMap,msg._msgid);
+		updateDatastore($widgetScope,msg);
 	}
 	$widgetScope.send(msg);
 }
+// ********************************************************************************************************************
 function createTable(initObj,$widgetScope,msg,styleMap,saveToDS)
 {
-	//---------------------------------------------------------------------------------------------------------
-	// (msg !== null) indicates table creation per user command (as opposed to startup), and returns a response
-	//---------------------------------------------------------------------------------------------------------
-	if (!initObj || JSON.stringify(initObj) === '{}')	// if empty initialization object --> return without creating a new table
+	//-----------------------------------------------------------------------------------------------------------------
+	// Called from:
+	// 1. Initial load - no msg/response, no DS update. if from DS, can include styles
+	// 2. tbCreateTable command - msg/response, no styles, update DS
+	// 3. tbResetTable command - msg/response, no styles, no update DS (DS is cleared before)
+	// 4. tbClearStyles command - msg/response, no styles, update DS
+	//-----------------------------------------------------------------------------------------------------------------
+
+	// if coming from a 'tbCreateTable', validate the input and return if invalid
+	if (msg?.tbCmd === "tbCreateTable")
 	{
-		destroyTable($widgetScope,null);  // destroy current table (if exists)
-		if (!$widgetScope.props.multiUser && saveToDS)
-			$widgetScope.saveToDatastore(false,null,null,null,msg._msgid);
+		if (!initObj)
+		{
+			msg.error = "Invalid table configuration";
+			$widgetScope.send(msg);
+			return;
+		}
+		// Check row Id validity & no dups
+		if ($widgetScope.props.validateRowIds && initObj.hasOwnProperty("data"))
+		{
+			const idField = initObj.hasOwnProperty("index") ? initObj.index : "id";
+			if (!checkInputRowIds(initObj.data,idField))
+			{
+				msg.error = "Invalid or duplicate row Id's"; 
+				$widgetScope.send(msg);
+				return;
+			}
+		}
+	}
+		
+	if (!initObj)	// no initialization object --> destroy current table (if exists), return without creating a new table
+	{
+		destroyTable($widgetScope,msg,saveToDS);  // destroy current table (if exists)
 		if (msg)
 		{
-			msg.payload = "No Table defined";
+			msg.payload = "Table not created";
 			$widgetScope.send(msg);
 		}
 		return;
 	}
-	destroyTable($widgetScope,null);  // destroy current table (if exists)
 
-	// Clone the table configuration object (rather than give an object reference), to protect the original (the table can modify it)
-	let tmpInitObj = cloneObj(initObj);
+	destroyTable($widgetScope,null,false);  // destroy current table (if exists)
+	// pass a cloned configuration object (rather than an object reference), to protect the original object (from modification inside Tabulator)
+	const clonedInitObj = cloneObj(initObj);
 
 	// Create a new table
 	try  
 	{
 		// create the table
 		if (!$widgetScope.tblDivId)
-			$widgetScope.tbl = new Tabulator($widgetScope.$refs.tabulatorDiv, tmpInitObj);
+			$widgetScope.tbl = new Tabulator($widgetScope.$refs.tabulatorDiv, clonedInitObj);
 		else
-			$widgetScope.tbl = new Tabulator("#"+$widgetScope.tblDivId, tmpInitObj);
+			$widgetScope.tbl = new Tabulator("#"+$widgetScope.tblDivId, clonedInitObj);
 		
 			// console.log("Table created");
 			// $widgetScope.send({payload:"Table created"});
@@ -525,10 +563,14 @@ function createTable(initObj,$widgetScope,msg,styleMap,saveToDS)
 		$widgetScope.tbl.on("tableBuilt", function()    {
 			$widgetScope.tblReady = true;
 
-			$widgetScope.tblConfig = cloneObj(initObj);
-			delete $widgetScope.tblConfig.data;
+			$widgetScope.currTblConfig = cloneObj(initObj);
+			delete $widgetScope.currTblConfig.data;
+
 			if (styleMap)
+			{
 				$widgetScope.tblStyleMap = cloneObj(styleMap);
+				applyFromStyleMap(styleMap,$widgetScope.tbl)
+			}
 			else
 				//$widgetScope.tblStyleMap = new tbStyleMap();
 				$widgetScope.tblStyleMap = null;
@@ -539,20 +581,17 @@ function createTable(initObj,$widgetScope,msg,styleMap,saveToDS)
 			// Set notifications for the selected events 
 			setEventNotifications($widgetScope);
 
-			if (styleMap)
-				applyFromStyleMap(styleMap,$widgetScope.tbl)
-
-			if ($widgetScope.props.events.includes("tableBuilt"))	// when explicitely specified, sends an event with table data (as defined in init object)
+			if ($widgetScope.props.events.includes("tableBuilt"))	// if this is explicitely specified in the notification list, send the notification from here
 			{
 				let eventMsg = new tbEventMsg("tableBuilt",$widgetScope.$socket.id);
-				eventMsg.payload = "Table built and ready, for client "+$widgetScope.$socket.id;
+				eventMsg.payload = "Table built and ready";
 				$widgetScope.send(eventMsg);
 			}
 
 			if (!$widgetScope.props.multiUser && saveToDS)
 			{
-				let data = initObj.data || [];
-				$widgetScope.saveToDatastore(true,$widgetScope.tblConfig,data,$widgetScope.tblStyleMap,msg._msgid);
+				const data = initObj.data || [];
+				$widgetScope.saveToDatastore(true,$widgetScope.currTblConfig,data,styleMap,msg?._msgid || "");
 			}
 			console.log($widgetScope.id+": Table built and ready");
 			if (msg)
@@ -567,8 +606,11 @@ function createTable(initObj,$widgetScope,msg,styleMap,saveToDS)
 		console.error($widgetScope.id+": Table creation failed",err);
 		$widgetScope.tbl = null;
 		$widgetScope.tblReady = false;
+		$widgetScope.currTblConfig = null;
+		$widgetScope.tblStyleMap = null;
+
 		if (!$widgetScope.props.multiUser && saveToDS)
-			$widgetScope.saveToDatastore(false,null,null,null,msg._msgid);
+			$widgetScope.saveToDatastore(false,null,null,null,msg?._msgid || "");
 		if (msg)
 		{
 			msg.payload = "Table creation failed";
@@ -577,28 +619,59 @@ function createTable(initObj,$widgetScope,msg,styleMap,saveToDS)
 		}
 	}	
 }
-function createTblFromDatastore(dsImage,$widgetScope)
+// ********************************************************************************************************************
+function initialTableLoad(dsImage,$widgetScope)
 {
-	if (!dsImage.exists)  // stored image = 'no table' (not to confuse with 'no stored image')
+	const dsDummyImage = "dummyDSImage";	// workaround: server does not send this event if no data in datastore, so we force dummy data
+
+	if ($widgetScope.props.multiUser || !dsImage || dsImage === "dummyDSImage")
 	{
-		destroyTable($widgetScope,null);
+		if ($widgetScope.origTblConfig)
+			console.log($widgetScope.id+": Creating table from node configuration");
+		else
+			console.log($widgetScope.id+": No table configuration");
+
+		createTable($widgetScope.origTblConfig,$widgetScope,null,null,false);
 		return;
 	}
+	
+	// shared mode with image in datastore
+	if (!dsImage.exists)  // stored image = 'no table' (not to confuse with 'no stored image')
+	{
+		console.log($widgetScope.id+": table configuration in datastore is null");
+		createTable(null,$widgetScope,null,null,false);
+		return;
+	}
+	
+	// image has table definition
+	console.log($widgetScope.id+": Creating table from datastore image");
 	let initObj;
 	if (dsImage.config)  // Stored image includes table configuration
 		initObj = dsImage.config;
 	else
 	{
-		initObj = parseTblConfig($widgetScope.props.initObj);
+		initObj = cloneObj($widgetScope.origTblConfig);
 		delete initObj.data;
 	}
 	if (dsImage.data)
 		initObj.data = dsImage.data;
 
+	// create the table
 	createTable(initObj,$widgetScope,null,dsImage.styleMap,false);
 }
-function destroyTable($widgetScope,msg)
+// ********************************************************************************************************************
+function destroyTable($widgetScope,msg,saveToDS)
 {
+	//-----------------------------------------------------------------------------------------------------------------
+	// Called from:
+	// 1. tbDestroyTable command - msg/response, update DS
+	// 2. from within createTable - 
+	//    - msg/response as in caller
+	//    - if table config OK, no DS update (DS is updated by the created table)
+	//    - if no table config, updates DS per caller argument ( to "no table")
+	// 3. unmounted() - no msg/response, no DS update
+	//-----------------------------------------------------------------------------------------------------------------
+
 	if ($widgetScope.tbl)
 	{
 		$widgetScope.tbl.clearData();
@@ -607,15 +680,30 @@ function destroyTable($widgetScope,msg)
 	}
 	$widgetScope.tbl = null;
 	$widgetScope.tblReady = false;
-	$widgetScope.tblConfig = null;
+	$widgetScope.currTblConfig = null;
 	$widgetScope.tblStyleMap = null;
+
+	if (!$widgetScope.props.multiUser && saveToDS)
+		$widgetScope.saveToDatastore(false,null,null,null,msg?._msgid || "");
 
 	if (msg)
 		$widgetScope.send(msg);
 }
+// ********************************************************************************************************************
+function updateDatastore($widgetScope,msg)
+{
+	if (!$widgetScope.currTblConfig)
+	{
+		$widgetScope.saveToDatastore(false,null,null,null,msg?._msgid);
+		return;
+	}
+
+	$widgetScope.saveToDatastore(true,$widgetScope.currTblConfig,$widgetScope.tbl.getData(),$widgetScope.tblStyleMap,msg?._msgid);
+}
+// ********************************************************************************************************************
 function setStyle(scope,styles,$widgetScope,msg)
 {
-/*
+/*  Logic:
 if (no rowId) ==> all rows in table. Ignoring field
 else if (rowId === "tbHeader")
 	if (field) ==> single column header
@@ -688,11 +776,11 @@ else
 	if (!msg.hasOwnProperty("error") && !$widgetScope.props.multiUser)
 	{
 		updateStyleMap($widgetScope,rowId,field,styles);
-		let data = $widgetScope.tbl.getData();
-		$widgetScope.saveToDatastore(true,$widgetScope.tblConfig,data,$widgetScope.tblStyleMap,msg._msgid);
+		updateDatastore($widgetScope,msg);
 	}
 	$widgetScope.send(msg);
 }
+// ********************************************************************************************************************
 function applyStyles(element,styles)
 {
 	// example: cellObj.getElement().style.backgroundColor = "cyan";
@@ -702,9 +790,10 @@ function applyStyles(element,styles)
 			element.style[prop] = styles[prop];
 	}		
 }
+// ********************************************************************************************************************
 function updateStyleMap($widgetScope,rowId,field,styles)
 {
-/*
+/*  Logic:
 if (no rowId) ==> all rows in table. Ignoring field
 else if (rowId === "tbHeader")
 	if (field) ==> single column header
@@ -782,6 +871,7 @@ else
 		}
 	}
 }
+// ********************************************************************************************************************
 function applyFromStyleMap(map,tbl)
 {
 	// first apply table-level styles
@@ -827,6 +917,7 @@ function applyFromStyleMap(map,tbl)
 		}
 	}
 }
+// ********************************************************************************************************************
 function setGroupBy($widgetScope,msg)
 {
 	if (!msg.tbFields || msg.tbFields == "" || msg.tbFields == [])
@@ -879,13 +970,14 @@ function setGroupBy($widgetScope,msg)
 	}
 	$widgetScope.send(msg);
 }
+// ********************************************************************************************************************
 function cellEditSync($widgetScope,msg)
 {
 	debugLog("processing sync message on cell-edit in another client");
 		
 	let data = {};
-	let rowIdField = $widgetScope.rowIdField;
-	data[rowIdField] = msg.payload[rowIdField];
+	let idField = $widgetScope.rowIdField;
+	data[idField] = msg.payload[idField];
 	data[msg.payload.field] = msg.payload.value;
 	try  {
 		$widgetScope.tbl.updateData([data]);
@@ -895,22 +987,20 @@ function cellEditSync($widgetScope,msg)
 	}
 	// Not sending a response msg to the flow, since this is an internal sync message
 }
-// ******** Tabulator API calls (Async, Sync, Auto) **************************************
-function tabulatorAsyncAPI(cmd,cmdArgs,msg,$widgetScope,successPostFunc,errorPostFunc)
+// ********************************************************************************************************************
+// Tabulator API calls (Async, Sync, Auto)
+// ********************************************************************************************************************
+function tabulatorAsyncAPI(cmd,cmdArgs,msg,$widgetScope)
 {
 	debugLog("Calling '"+cmd+"', API mode=Async");
 	let args = cmdArgs ? cloneObj(cmdArgs) : [];	// for some reason, sometimes it doesn't work with the original args object
 
 	$widgetScope.tbl[cmd](...args)
 		.then(function(xxx){
-			if (successPostFunc)
-				successPostFunc();
 			updateAndRespond(msg,$widgetScope);
 		})
 		.catch(function(err){
 			msg.error = err;
-			if (errorPostFunc)
-					errorPostFunc();
 			updateAndRespond(msg,$widgetScope);	// update Datastore even upon error, as cmd may have been applied partially
 		});
 }
@@ -973,6 +1063,7 @@ function isSendable(obj)
 		return false;
 	}
 }
+// ********************************************************************************************************************
 function setEventNotifications($widgetScope)
 {
 	let eventStr = $widgetScope.props.events;
@@ -989,8 +1080,37 @@ function setEventNotifications($widgetScope)
 			continue;
 		switch (ev)
 		{
+		//-------------------------------------------------------
+		// Table events
+		//-------------------------------------------------------
 			case "tableBuilt":	// Listener is set automatically during createTable(). If also explicitly set in the events list, it will also issue a notification from there
 				break;
+			case "tableDestroyed":  // Sent *after* table is destroyed
+				$widgetScope.tbl.on(ev, function(){
+					let eventMsg = new tbEventMsg(ev,$widgetScope.$socket.id);
+					$widgetScope.send(eventMsg);
+				});
+				break;
+			case "dataChanged":
+				$widgetScope.tbl.on(ev, function(data){
+					let eventMsg = new tbEventMsg(ev,$widgetScope.$socket.id);
+					evMsg.payload = data;
+					$widgetScope.send(eventMsg);
+				});
+				break;
+/*
+			case "dataFiltered":
+				$widgetScope.tbl.on(ev, function(filters,rows){	// filters - array of filters currently applied, rows = array of row components which pass the filters
+					let filteredData = new Array(rows.length)
+					for (let i = 0 ; i < rows.length ; i++)
+						filteredData[i] = rows[i].getData();
+
+					let eventMsg = new tbEventMsg(ev,$widgetScope.$socket.id);
+					eventMsg.payload = { filteredData: filteredData };
+					$widgetScope.send(eventMsg);
+				});
+				break;
+*/				
 		//-------------------------------------------------------
 		// Row events
 		//-------------------------------------------------------
@@ -1019,6 +1139,8 @@ function setEventNotifications($widgetScope)
 		//-------------------------------------------------------
 			case "cellEdited":
 				$widgetScope.tbl.on(ev, function(cell)	{  // cell = cell component
+
+					let eventMsg = new tbEventMsg(ev,$widgetScope.$socket.id);
 					
 					let row = cell.getRow();
 					let col = cell.getColumn();
@@ -1029,7 +1151,6 @@ function setEventNotifications($widgetScope)
 					
 					if ($widgetScope.props.events.includes("cellEdited"))	// Event is registered in notifications
 					{
-						let eventMsg = new tbEventMsg(ev,$widgetScope.$socket.id);
 						eventMsg.payload =   {
 							[rowIdField]: rowId,
 							field:    field,
@@ -1041,25 +1162,22 @@ function setEventNotifications($widgetScope)
 					// if not multi-user, send client sync notification
 					if (!$widgetScope.props.multiUser)
 					{
-						let cellSyncMsg = new tbEventMsg(ev,$widgetScope.$socket.id);
-						cellSyncMsg.tbCmd = 'tbCellEditSync';
-						cellSyncMsg.payload = {
+						eventMsg.tbCmd = 'tbCellEditSync';
+						eventMsg.payload = {
 							[rowIdField]: rowId,
 							field: field,
 							value: value,
 						}
 						//piggyback the DS image on the event, to allow server node to update the datastore
-						let dsImage = {
-								timestamp: Date.now(),
-								saveId: cellSyncMsg._msgid,
-								exists: true,
-								config: $widgetScope.tblConfig,
-								data:   $widgetScope.tbl.getData(),
-								styleMap: $widgetScope.tblStyleMap
-							}
-						cellSyncMsg.dsImage = dsImage;
-						$widgetScope.tblHasDSImage = true;
-						$widgetScope.sendClientCommand("tbCellEditSync",cellSyncMsg);	
+						eventMsg.dsImage = {
+							timestamp: Date.now(),
+							clientMsgId: eventMsg.notificationId,
+							exists: true,
+							config: $widgetScope.currTblConfig,
+							data:   $widgetScope.tbl.getData(),
+							styleMap: $widgetScope.tblStyleMap
+						}
+						$widgetScope.sendClientCommand("tbCellEditSync",eventMsg);	
 					};
 				});
 				break;
@@ -1073,30 +1191,6 @@ function setEventNotifications($widgetScope)
 					$widgetScope.send(eventMsg);
 				});
 				break;
-/*
-		//-------------------------------------------------------
-		// Table events
-		//-------------------------------------------------------
-			case "tableDestroyed":  // Sent *after* table is destroyed
-				$widgetScope.tbl.on(ev, function(){
-					let eventMsg = new tbEventMsg(ev,$widgetScope.$socket.id);
-					$widgetScope.send(eventMsg);
-				});
-				break;
-
-			case "dataFiltered":
-				$widgetScope.tbl.on(ev, function(filters,rows){	// filters - array of filters currently applied, rows = array of row components which pass the filters
-					let filteredData = new Array(rows.length)
-					for (let i = 0 ; i < rows.length ; i++)
-						filteredData[i] = rows[i].getData();
-
-					let eventMsg = new tbEventMsg(ev,$widgetScope.$socket.id);
-					eventMsg.payload = { filteredData: filteredData };
-					$widgetScope.send(eventMsg);
-				});
-				break;
-*/				
-		//-------------------------------------------------------
 			default:
 				console.error("Event '"+ev+"' is not defined or unsupported");
 				continue;
@@ -1124,32 +1218,7 @@ function cellEventMsg(cell,ev,sockId)
 	}
 	return	evMsg;
 }
-function parseTblConfig(objStr)
-{
-	if (objStr.trim())
-	{
-		try  {
-			let cfgObj = JSON.parse(objStr);
-
-			// Check for rowId validity & duplicates
-			if (cfgObj.hasOwnProperty("data") && Array.isArray(cfgObj.data))
-			{
-				let rowIdField = cfgObj.hasOwnProperty("index") ? cfgObj.index : "id";
-				if (!checkRowIds(cfgObj.data,rowIdField))
-				{
-					console.error("Invalid or duplicate row Id's");
-					return null;
-				}
-			}
-			return cfgObj;
-		}
-		catch (err) {
-			console.error("Invalid table configuration:",err);
-			return null;
-		}	
-	}
-	return {};
-}
+// ********************************************************************************************************************
 function loadThemeCSS(css,$widgetScope)
 {
 	// Load selected tabulator CSS file (currently global to the page)
@@ -1197,12 +1266,23 @@ function tbEventMsg(ev,sockId)
 		this._client = {socketId:sockId};
 }
 // *********  Utility functions  ****************************************************************
-function checkRowIds(rows,idField)
+function checkInputRowIds(rows,idField)
 {
 	// Checks that the rows (to be added/updated in the table) have valid Ids, with no duplicates
 	if (!Array.isArray(rows))
 		return false;
 
+    for (let i = 0 ; i < rows.length ; i++)
+	{
+		if (rows[i][idField] == undefined || rows[i][idField] == null)
+			return false;
+
+        for (let j = i+1 ; j < rows.length; j++)
+            if (rows[i][idField] === rows[j][idField])
+                return false;
+	}
+    return true;
+/*
 	let idArr = [];
 	for (let i = 0 ; i < rows.length ; i++)
 	{
@@ -1213,19 +1293,35 @@ function checkRowIds(rows,idField)
 	if ((new Set(idArr)).size !== rows.length)
 		return false;
 	return true;
+*/
 }
-function checkAddedRows(rows,$widgetScope)
+function checkAddedDupRows(rows,$widgetScope)
 {
 	// Checks if added rows do not have the same Id as existing rows (to avoid duplicate Ids)
-	if (!Array.isArray(rows))
-		return false;
+    const tblRows = $widgetScope.tbl.getRows();
+	const idField = $widgetScope.rowIdField;
+
+	for (let i = 0 ; i < rows.length ; i++)
+	{
+		if (tblRows.findIndex((rowComp)=> rowComp.getCell(idField).getValue() == rows[i][idField]) >= 0)
+			return false;
+	}
+	return true;
+/*	
+    rowComps.forEach(function(rowComp) {
+        let rowId = compRow.getCell($widgetScope.rowIdField).getValue());
+
+		if (data.findIndex((e)=> e[rowIdField] == rows[i][rowIdField]) >= 0)
+			return false;
+		
+	});
 
 	let data = $widgetScope.tbl.getData();
-	let rowIdField = $widgetScope.rowIdField;
 	for (let i = 0 ; i < rows.length ; i++)
 		if (data.findIndex((e)=> e[rowIdField] == rows[i][rowIdField]) >= 0)
 			return false;
 	return true;
+*/
 }
 function cloneObj(obj)
 {

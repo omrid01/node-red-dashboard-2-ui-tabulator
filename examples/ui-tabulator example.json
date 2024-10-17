@@ -20,8 +20,8 @@
             "7bfbc3bdb59c1514",
             "81390a50f1f63b64"
         ],
-        "x": 594,
-        "y": 659,
+        "x": 454,
+        "y": 639,
         "w": 302,
         "h": 122
     },
@@ -45,7 +45,7 @@
             "6696eda7ede52f57"
         ],
         "x": 454,
-        "y": 239,
+        "y": 199,
         "w": 452,
         "h": 302
     },
@@ -110,8 +110,8 @@
             "4f7f96107351e62a",
             "ebf128a3b696ce43"
         ],
-        "x": 564,
-        "y": 39,
+        "x": 454,
+        "y": 19,
         "w": 352,
         "h": 142
     },
@@ -142,6 +142,25 @@
         "h": 322
     },
     {
+        "id": "cad1504ee1148798",
+        "type": "group",
+        "z": "defcf8ff528868a9",
+        "name": "UI-Originated Commands",
+        "style": {
+            "label": true,
+            "color": "#000000"
+        },
+        "nodes": [
+            "f0eb30740a7fd744",
+            "6f7e64290121b77b",
+            "1fc64646574a4db2"
+        ],
+        "x": 454,
+        "y": 519,
+        "w": 312,
+        "h": 82
+    },
+    {
         "id": "493c9986920ec2d2",
         "type": "debug",
         "z": "defcf8ff528868a9",
@@ -155,8 +174,8 @@
         "targetType": "full",
         "statusVal": "",
         "statusType": "auto",
-        "x": 855,
-        "y": 140,
+        "x": 745,
+        "y": 120,
         "wires": [],
         "l": false
     },
@@ -345,7 +364,7 @@
         "onceDelay": 0.1,
         "topic": "",
         "x": 610,
-        "y": 360,
+        "y": 320,
         "wires": [
             [
                 "6696eda7ede52f57"
@@ -401,8 +420,8 @@
         "once": false,
         "onceDelay": 0.1,
         "topic": "",
-        "x": 720,
-        "y": 700,
+        "x": 580,
+        "y": 680,
         "wires": [
             [
                 "81390a50f1f63b64"
@@ -443,7 +462,7 @@
         "onceDelay": 0.1,
         "topic": "",
         "x": 580,
-        "y": 280,
+        "y": 240,
         "wires": [
             [
                 "0af4dbbb9f034e39"
@@ -461,7 +480,7 @@
             "20bfc0f8799a929b"
         ],
         "x": 865,
-        "y": 420,
+        "y": 380,
         "wires": []
     },
     {
@@ -476,10 +495,10 @@
             "a13b0f277c69cf95",
             "81390a50f1f63b64",
             "c86666683436d68a",
-            "b802b09e9cb11a8e"
+            "6f7e64290121b77b"
         ],
-        "x": 605,
-        "y": 140,
+        "x": 495,
+        "y": 120,
         "wires": [
             [
                 "ebf128a3b696ce43"
@@ -505,8 +524,8 @@
         "resendOnRefresh": true,
         "templateScope": "page:style",
         "className": "",
-        "x": 770,
-        "y": 80,
+        "x": 640,
+        "y": 60,
         "wires": [
             []
         ]
@@ -517,17 +536,19 @@
         "z": "defcf8ff528868a9",
         "g": "5b19349a798b25c8",
         "name": "Table-1",
-        "group": "ec59cdcab7e75298",
-        "initObj": "{\n\t\"height\": 200,\n\t\"selectableRows\": true,\n\t\"data\": [\n\t\t{\n\t\t\t\"id\": 1,\n\t\t\t\"fname\": \"John\",\n\t\t\t\"lname\": \"Smith\",\n\t\t\t\"age\": 25,\n\t\t\t\"gender\": \"Male \",\n\t\t\t\"clr\": 3,\n\t\t\t\"notes\": \"A jolly good fellow\"\n\t\t},\n\t\t{\n\t\t\t\"id\": 2,\n\t\t\t\"fname\": \"Jack\",\n\t\t\t\"lname\": \"Brown\",\n\t\t\t\"gender\": \"Male \",\n\t\t\t\"age\": 32,\n\t\t\t\"clr\": 4,\n\t\t\t\"notes\": \"Just an ordinary guy\"\n\t\t},\n\t\t{\n\t\t\t\"id\": 3,\n\t\t\t\"fname\": \"Jill\",\n\t\t\t\"lname\": \"Baker\",\n\t\t\t\"gender\": \"Female\",\n\t\t\t\"age\": 21,\n\t\t\t\"clr\": 5,\n\t\t\t\"notes\": \"She's the best\"\n\t\t}\n\t],\n\t\"columns\": [\n        {\"formatter\":\"rowSelection\",\"titleFormatter\":\"rowSelection\",\"width\": 40,\"hozAlign\":\"center\",\"headerSort\":false},\n\t\t{\n\t\t\t\"title\": \"Id\",\n\t\t\t\"field\": \"id\",\n\t\t\t\"width\": 50,\n\t\t\t\"hozAlign\": \"center\"\n\t\t},\n\t\t{\n\t\t\t\"title\": \"First Name\",\n\t\t\t\"field\": \"fname\",\n\t\t\t\"width\": 120,\n\t\t\t\"hozAlign\": \"left\",\n\t\t\t\"headerFilter\": \"input\",\n\t\t\t\"headerFilterPlaceholder\": \"Filter...\"\n\t\t},\n\t\t{\n\t\t\t\"title\": \"Last Name\",\n\t\t\t\"field\": \"lname\",\n\t\t\t\"width\": 120,\n\t\t\t\"hozAlign\": \"left\",\n\t\t\t\"headerFilter\": \"input\",\n\t\t\t\"headerFilterPlaceholder\": \"Filter...\"\n\t\t},\n\t\t{\n\t\t\t\"title\": \"Gender\",\n\t\t\t\"field\": \"gender\",\n\t\t\t\"width\": 100,\n\t\t\t\"hozAlign\": \"center\",\n\t\t\t\"editor\": \"list\",\n\t\t\t\"editorParams\": {\n\t\t\t\t\"values\": {\n\t\t\t\t\t\"Male \": \"Male \",\n\t\t\t\t\t\"Female\": \"Female\",\n\t\t\t\t\t\"Unknown\": \"Unknown\"\n\t\t\t\t}\n\t\t\t},\n\t\t\t\"headerFilter\": true,\n\t\t\t\"headerFilterPlaceholder\": \"Select...\",\n\t\t\t\"headerFilterParams\": {\n\t\t\t\t\"values\": {\n\t\t\t\t\t\"Male \": \"Male \",\n\t\t\t\t\t\"Female\": \"Female\",\n\t\t\t\t\t\"Unknown\": \"Unknown\",\n\t\t\t\t\t\"\": \"\"\n\t\t\t\t}\n\t\t\t}\n\n\t\t},\n\t\t{\n\t\t\t\"title\": \"Age\",\n\t\t\t\"field\": \"age\",\n\t\t\t\"width\": 80,\n\t\t\t\"hozAlign\": \"center\"\n\t\t},\n\t\t{\n\t\t\t\"field\": \"clr\",\n\t\t\t\"width\": 20,\n\t\t\t\"hozAlign\": \"center\",\n\t\t\t\"formatter\": \"traffic\",\n\t\t\t\"formatterParams\": {\n\t\t\t\t\"min\": 0,\n\t\t\t\t\"max\": 6,\n\t\t\t\t\"color\": [\n\t\t\t\t\t\"\",\n\t\t\t\t\t\"gray\",\n\t\t\t\t\t\"orange\",\n\t\t\t\t\t\"blue\",\n\t\t\t\t\t\"green\",\n\t\t\t\t\t\"red\",\n\t\t\t\t\t\"cyan\"\n\t\t\t\t]\n\t\t\t}\n\t\t},\n\t\t{\n\t\t\t\"title\": \"Notes\",\n\t\t\t\"field\": \"notes\",\n\t\t\t\"width\": 200,\n\t\t\t\"hozAlign\": \"left\",\n\t\t\t\"editor\": \"input\"\n\t\t}\n\t]\n}",
+        "group": "70c8e6416fd84914",
+        "initObj": "{\n\t\"height\": 200,\n\t\"selectableRows\": true,\n    \"layout\":\"fitColumns\",\n\t\"data\": [\n\t\t{\n\t\t\t\"id\": 1,\n\t\t\t\"fname\": \"John\",\n\t\t\t\"lname\": \"Smith\",\n\t\t\t\"age\": 25,\n\t\t\t\"gender\": \"Male \",\n\t\t\t\"clr\": 3,\n\t\t\t\"notes\": \"A jolly good fellow\"\n\t\t},\n\t\t{\n\t\t\t\"id\": 2,\n\t\t\t\"fname\": \"Jack\",\n\t\t\t\"lname\": \"Brown\",\n\t\t\t\"gender\": \"Male \",\n\t\t\t\"age\": 9,\n\t\t\t\"clr\": 4,\n\t\t\t\"notes\": \"Just an ordinary guy\"\n\t\t},\n\t\t{\n\t\t\t\"id\": 3,\n\t\t\t\"fname\": \"Jill\",\n\t\t\t\"lname\": \"Baker\",\n\t\t\t\"gender\": \"Female\",\n\t\t\t\"age\": 21,\n\t\t\t\"clr\": 5,\n\t\t\t\"notes\": \"She's the best\"\n\t\t}\n\t],\n\t\"columns\": [\n        {\"formatter\":\"rowSelection\",\"titleFormatter\":\"rowSelection\",\"width\": 40,\"hozAlign\":\"center\",\"headerSort\":false},\n\t\t{\n\t\t\t\"title\": \"Id\",\n\t\t\t\"field\": \"id\",\n\t\t\t\"width\": 50,\n\t\t\t\"headerSortTristate\":true,\n\t\t\t\"hozAlign\": \"center\"\n\t\t},\n\t\t{\n\t\t\t\"title\": \"First Name\",\n\t\t\t\"field\": \"fname\",\n\t\t\t\"width\": 120,\n\t\t\t\"headerSortTristate\":true,\n\t\t\t\"hozAlign\": \"left\",\n\t\t\t\"headerFilter\": \"input\",\n\t\t\t\"headerFilterPlaceholder\": \"Filter...\"\n\t\t},\n\t\t{\n\t\t\t\"title\": \"Last Name\",\n\t\t\t\"field\": \"lname\",\n\t\t\t\"width\": 120,\n\t\t\t\"headerSortTristate\":true,\n\t\t\t\"hozAlign\": \"left\",\n\t\t\t\"headerFilter\": \"input\",\n\t\t\t\"headerFilterPlaceholder\": \"Filter...\"\n\t\t},\n\t\t{\n\t\t\t\"title\": \"Gender\",\n\t\t\t\"field\": \"gender\",\n\t\t\t\"width\": 100,\n\t\t\t\"headerSortTristate\":true,\n\t\t\t\"hozAlign\": \"center\",\n\t\t\t\"editor\": \"list\",\n\t\t\t\"editorParams\": {\n\t\t\t\t\"values\": {\n\t\t\t\t\t\"Male \": \"Male \",\n\t\t\t\t\t\"Female\": \"Female\",\n\t\t\t\t\t\"Unknown\": \"Unknown\"\n\t\t\t\t}\n\t\t\t},\n\t\t\t\"headerFilter\": true,\n\t\t\t\"headerFilterPlaceholder\": \"Select...\",\n\t\t\t\"headerFilterParams\": {\n\t\t\t\t\"values\": {\n\t\t\t\t\t\"Male \": \"Male \",\n\t\t\t\t\t\"Female\": \"Female\",\n\t\t\t\t\t\"Unknown\": \"Unknown\",\n\t\t\t\t\t\"\": \"\"\n\t\t\t\t}\n\t\t\t}\n\n\t\t},\n\t\t{\n\t\t\t\"title\": \"Age\",\n\t\t\t\"field\": \"age\",\n\t\t\t\"width\": 80,\n\t\t\t\"headerSortTristate\":true,\n\t\t\t\"hozAlign\": \"center\"\n\t\t},\n\t\t{\n\t\t\t\"field\": \"clr\",\n\t\t\t\"width\": 20,\n\t\t\t\"headerSortTristate\":true,\n\t\t\t\"hozAlign\": \"center\",\n\t\t\t\"formatter\": \"traffic\",\n\t\t\t\"formatterParams\": {\n\t\t\t\t\"min\": 0,\n\t\t\t\t\"max\": 6,\n\t\t\t\t\"color\": [\n\t\t\t\t\t\"\",\n\t\t\t\t\t\"gray\",\n\t\t\t\t\t\"orange\",\n\t\t\t\t\t\"blue\",\n\t\t\t\t\t\"green\",\n\t\t\t\t\t\"red\",\n\t\t\t\t\t\"cyan\"\n\t\t\t\t]\n\t\t\t}\n\t\t},\n\t\t{\n\t\t\t\"title\": \"Notes (Editable)\",\n\t\t\t\"field\": \"notes\",\n\t\t\t\"headerSortTristate\":true,\n\t\t\t\"hozAlign\": \"left\",\n\t\t\t\"editor\": \"input\"\n\t\t}\n\t]\n}",
+        "maxWidth": "55em",
         "events": "cellEdited,rowDblClick",
-        "order": 2,
+        "order": 1,
         "multiUser": false,
+        "validateRowIds": false,
         "themeFile": "@CSS:tabulator_midnight.min.css",
-        "passthru": false,
-        "width": "4",
+        "tblDivId": "",
+        "width": "9",
         "height": "3",
-        "x": 740,
-        "y": 140,
+        "x": 630,
+        "y": 120,
         "wires": [
             [
                 "493c9986920ec2d2"
@@ -558,7 +579,7 @@
         "onceDelay": 0.1,
         "topic": "",
         "x": 570,
-        "y": 460,
+        "y": 420,
         "wires": [
             [
                 "abd2eda2d3d71162"
@@ -603,8 +624,8 @@
         "once": false,
         "onceDelay": 0.1,
         "topic": "",
-        "x": 710,
-        "y": 740,
+        "x": 570,
+        "y": 720,
         "wires": [
             [
                 "81390a50f1f63b64"
@@ -770,7 +791,7 @@
         "onceDelay": 0.1,
         "topic": "",
         "x": 570,
-        "y": 400,
+        "y": 360,
         "wires": [
             [
                 "abd2eda2d3d71162"
@@ -815,7 +836,7 @@
         "onceDelay": 0.1,
         "topic": "",
         "x": 570,
-        "y": 500,
+        "y": 460,
         "wires": [
             [
                 "abd2eda2d3d71162"
@@ -846,8 +867,8 @@
         "links": [
             "20bfc0f8799a929b"
         ],
-        "x": 855,
-        "y": 720,
+        "x": 715,
+        "y": 700,
         "wires": []
     },
     {
@@ -884,7 +905,7 @@
         "onceDelay": 0.1,
         "topic": "",
         "x": 590,
-        "y": 320,
+        "y": 280,
         "wires": [
             [
                 "0af4dbbb9f034e39"
@@ -1029,23 +1050,6 @@
         "l": false
     },
     {
-        "id": "92ef4472bdb139d8",
-        "type": "ui-markdown",
-        "z": "defcf8ff528868a9",
-        "group": "ec59cdcab7e75298",
-        "name": "Title",
-        "order": 1,
-        "width": "4",
-        "height": "1",
-        "content": "# ui-tabulator Example\n",
-        "className": "",
-        "x": 470,
-        "y": 60,
-        "wires": [
-            []
-        ]
-    },
-    {
         "id": "724572d32d81d2e6",
         "type": "function",
         "z": "defcf8ff528868a9",
@@ -1138,7 +1142,7 @@
         "finalize": "",
         "libs": [],
         "x": 755,
-        "y": 300,
+        "y": 260,
         "wires": [
             [
                 "abd2eda2d3d71162"
@@ -1160,7 +1164,7 @@
         "finalize": "",
         "libs": [],
         "x": 755,
-        "y": 380,
+        "y": 340,
         "wires": [
             [
                 "abd2eda2d3d71162"
@@ -1169,47 +1173,143 @@
         "l": false
     },
     {
+        "id": "f0eb30740a7fd744",
+        "type": "ui-button",
+        "z": "defcf8ff528868a9",
+        "g": "cad1504ee1148798",
+        "group": "70c8e6416fd84914",
+        "name": "",
+        "label": "Group By",
+        "order": 2,
+        "width": "2",
+        "height": "1",
+        "emulateClick": true,
+        "tooltip": "",
+        "color": "",
+        "bgcolor": "",
+        "className": "",
+        "icon": "",
+        "iconPosition": "left",
+        "payload": "",
+        "payloadType": "str",
+        "topic": "topic",
+        "topicType": "msg",
+        "buttonColor": "",
+        "textColor": "",
+        "iconColor": "",
+        "x": 540,
+        "y": 560,
+        "wires": [
+            [
+                "1fc64646574a4db2"
+            ]
+        ]
+    },
+    {
+        "id": "6f7e64290121b77b",
+        "type": "link out",
+        "z": "defcf8ff528868a9",
+        "g": "cad1504ee1148798",
+        "name": "link out 78",
+        "mode": "link",
+        "links": [
+            "20bfc0f8799a929b"
+        ],
+        "x": 725,
+        "y": 560,
+        "wires": []
+    },
+    {
+        "id": "1fc64646574a4db2",
+        "type": "function",
+        "z": "defcf8ff528868a9",
+        "g": "cad1504ee1148798",
+        "name": "function 90",
+        "func": "msg.tbCmd = \"tbSetGroupBy\";\nmsg.tbFields = [\"gender\"];\nmsg. tbGroupHeader = '<b>$field</b>, value=<span style=\"color:red\">$value</span>, count=$count'\nreturn msg;\n",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 665,
+        "y": 560,
+        "wires": [
+            [
+                "6f7e64290121b77b"
+            ]
+        ],
+        "l": false
+    },
+    {
         "id": "59f7c83cfe44c342",
         "type": "ui-page",
-        "name": "ui-tabulator",
+        "name": "Tabulator",
         "ui": "b7fd8a2cce8052cc",
-        "path": "/ui-tabulator",
+        "path": "/tabulator",
         "icon": "table",
-        "layout": "notebook",
+        "layout": "grid",
         "theme": "b7b1935fbb33bbc8",
+        "breakpoints": [
+            {
+                "name": "Default",
+                "px": "0",
+                "cols": "3"
+            },
+            {
+                "name": "Tablet",
+                "px": "576",
+                "cols": "6"
+            },
+            {
+                "name": "Small Desktop",
+                "px": "768",
+                "cols": "9"
+            },
+            {
+                "name": "Desktop",
+                "px": "1024",
+                "cols": "12"
+            }
+        ],
         "order": 1,
         "className": "",
         "visible": true,
-        "disabled": "false"
+        "disabled": false
     },
     {
-        "id": "ec59cdcab7e75298",
+        "id": "70c8e6416fd84914",
         "type": "ui-group",
-        "name": "ui-tabulator-1",
-        "page": "59f7c83cfe44c342",
-        "width": "5",
+        "name": "ui-tabulator Example",
+        "page": "561dc2b9ba26313a",
+        "width": "12",
         "height": "1",
         "order": 1,
-        "showTitle": false,
-        "className": "",
+        "showTitle": true,
+        "className": "grp-name",
         "visible": "true",
         "disabled": "false"
     },
     {
         "id": "b7fd8a2cce8052cc",
         "type": "ui-base",
-        "name": "ui1",
+        "name": "ui7",
         "path": "/dashboard",
         "includeClientData": true,
         "acceptsClientConfig": [
-            "ui-control",
-            "ui-notification"
-        ]
+            "ui-notification",
+            "ui-dropdown",
+            "ui-control"
+        ],
+        "showPathInSidebar": false,
+        "showPageTitle": true,
+        "navigationStyle": "default",
+        "titleBarStyle": "default"
     },
     {
         "id": "b7b1935fbb33bbc8",
         "type": "ui-theme",
-        "name": "def theme",
+        "name": "Default theme",
         "colors": {
             "surface": "#ffffff",
             "primary": "#0094ce",
@@ -1223,5 +1323,41 @@
             "groupBorderRadius": "4px",
             "widgetGap": "12px"
         }
+    },
+    {
+        "id": "561dc2b9ba26313a",
+        "type": "ui-page",
+        "name": "Tabulator Example",
+        "ui": "b7fd8a2cce8052cc",
+        "path": "/tbl-example1",
+        "icon": "table",
+        "layout": "grid",
+        "theme": "b7b1935fbb33bbc8",
+        "breakpoints": [
+            {
+                "name": "Default",
+                "px": "0",
+                "cols": "3"
+            },
+            {
+                "name": "Tablet",
+                "px": "576",
+                "cols": "6"
+            },
+            {
+                "name": "Small Desktop",
+                "px": "768",
+                "cols": "9"
+            },
+            {
+                "name": "Desktop",
+                "px": "1024",
+                "cols": "12"
+            }
+        ],
+        "order": 7,
+        "className": "",
+        "visible": "true",
+        "disabled": "false"
     }
 ]

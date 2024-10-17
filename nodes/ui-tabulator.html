@@ -25,6 +25,7 @@ const sampleTblConfig = `{
 			events: { value: "" },
             order: { value: 0 },
 			multiUser:{ value: false },
+			validateRowIds: {value:false},
 			themeCSS: { value: "" },	// placeholder for initial load of theme file CSS
 			themeFile: { value: "" },
 			tblDivId:{ value: "", validate: function (v) {return (v.trim() === "" || v.match(/^[a-zA-Z_-][a-zA-Z0-9_-]*$/) !== null)} },
@@ -148,7 +149,12 @@ function isValidJSON(str)
     </div>
     <div>
         <input type="checkbox" style="vertical-align:top;" id="node-input-multiUser"/>&nbsp
-		<label style="display:inline-block" for="node-input-multiUser">Multi-user mode</label>
+		<label style="display:inline-block" for="node-input-multiUser">Multi-User Mode</label>
+    </div>
+	<br>
+    <div>
+        <input type="checkbox" style="vertical-align:top;" id="node-input-validateRowIds"/>&nbsp
+		<label style="display:inline-block" for="node-input-validateRowIds">Validate Row-Id Uniqueness</label>
     </div>
 	<br>
     <div class="form-row">

@@ -8,24 +8,23 @@ module.exports = function (RED) {
 		const dsDummyImage = "dummyDSImage";
 
 		// Set debug log policy
-		let e = process.env.TBDEBUG;
-		var printToLog  = (e && e.toLowerCase() === 'true') ? true : false;
+		const e = process.env.TBDEBUG;
+		const printToLog  = (e?.toLowerCase() === 'true') ? true : false;
 		config.printToLog = printToLog;
 
-		debugLog("ui-tabulator: creating ui-tabulator server node "+node.id);
+		debugLog("Creating ui-tabulator server node, id="+node.id);
 
 		// Saving last msg id's to allow filtering duplicate messages (from concurrent open clients)
 		node.multiUser = config.multiUser;
 		if (!node.multiUser)
 		{
 			node.lastMsgs		= new Map();
-			node.lastSaves		= new Map();
 			node.lastClientMsgs	= new Map();
 		}
 		
         // which group are we rendering this widget
-        const group = RED.nodes.getNode(config.group)
-        const base = group.getBase()
+        const group = RED.nodes.getNode(config.group);
+        const base = group.getBase();
 
         // server-side event handlers
         const evts = {
@@ -38,17 +37,18 @@ module.exports = function (RED) {
 				//	send(msg);
             },
 
-            onSocket: {
-				// Function arguments: conn = socketId, id = node.id
+            onSocket: {					// Function arguments: conn = socketId, id = node.id
 				//-------------------------------------------------------------------------------------------------
 				//'widget-action': function  (conn, id, msg) {
 				//	console.log("'widget action' msg:",msg)
                 //},
 
-				//-------------------------------------------------------------------------------------------------
-				// Generic response sender. filters duplicate messages (from multiple open clients, in shared mode)
-                //['tbSendMessage'+node.id]: function (conn, id, msg) { //   listener per ui-tabulator instance
-                'tbSendMessage': function (conn, id, msg) {	            // single listener for ui-tabulator instances (less impact on socket) 
+				// *******************************************************************************************************************************
+				// Generic response sender. filters duplicate messages (from multiple open clients, in shared mode), and sends through output port
+				// *******************************************************************************************************************************
+                
+				//['tbSendMessage'+node.id]: function (conn, id, msg) { // listener per ui-tabulator node instance
+                'tbSendMessage': function (conn, id, msg) {	            // single listener for all ui-tabulator nodes (less impact on socket) 
 					if (id !== node.id)
 						return;
 					
@@ -63,25 +63,27 @@ module.exports = function (RED) {
 					
 					// Reponses to commands
 					//---------------------
-					//console.log("command response",msg)
 					switch (msg.tbCmd)
 					{
 						// Connection Test
 						case "tbTestConnection":
 							console.log("ui-tabulator connection test: ping from node="+msg.nodeId+", sockId="+msg.clientSockId+", on listener "+msg.listener);
 							node.send(msg);
-							break;
+							return;
 						default: 
+							//console.log("command response",msg)
 							if (node.multiUser || !inMap(node.lastMsgs,msg._msgid, msg._client || ""))
 								node.send(msg);
-							break;
+							return;
 					}
                 },
 
-				//-------------------------------------------------------------------------------------------------
-				// Internal commands from the client
-                //['tbClientCommands'+node.id]: function (conn, id, msg) {
-                'tbClientCommands': function (conn, id, msg) {
+				// *******************************************************************************************************************************
+				// Internal commands from the clients
+				// *******************************************************************************************************************************
+
+                //['tbClientCommands'+node.id]: function (conn, id, msg) {	// listener per ui-tabulator node instance
+                'tbClientCommands': function (conn, id, msg) {				// single listener for all ui-tabulator nodes (less impact on socket) 
 					if (id !== node.id)
 						return;
 
@@ -92,38 +94,48 @@ module.exports = function (RED) {
 						// Since this is a user-originated change (on a single client), it needs to be distributed to all other clients
 						//---------------------------------------------------------------------
 						case 'tbCellEditSync':
-							debugLog("Received cell edited sync notification");
+							debugLog("Received 'cellEdited' notification");
+
 							// Update datastore
-							base.stores.data.save(base, node, msg.dsImage);
+							if (!node.multiUser)
+							{
+								debugLog("Saving to datastore: node.id="+node.id,msg);
+								base.stores.data.save(base, node, msg.dsImage);
+							}
+
+							// update the other client widgets
+							debugLog("Sending to other clients");
 							delete msg.dsImage;
 							delete msg.topic; // remove 'tbNotification' to avoid confusion
-							msg.tbClientScope = "tbNotSameClient";	// update only the other clients
-							// update other client widgets
+							msg.tbClientScope = "tbNotSameClient";	// skip originator, update only the other clients
 							broadcastToClients(msg);
 							break;
 
 						// Datastore commands
 						//---------------------------------------------------------------------
 						case 'tbSaveToDatastore':
-							if (!inMap(node.lastSaves,msg.saveId,""))
+							if (!node.multiUser && !inMap(node.lastClientMsgs,msg.clientMsgId,""))
 							{
-								debugLog("Saving to datastore: node.id="+node.id,msg);
-								let dsImage = msg.payload;
-								//	debugLog(`Saving table for node.id ${node.id}, saveId ${dsImage.saveId}, exists:${dsImage.exists}, config:${dsImage.config}, data:${dsImage.data?dsImage.data.length+' rows': null}`);
+								const dsImage = msg.payload;
+								debugLog(`Saving to datastore: node.id=${node.id}, clientMsgId: ${dsImage.clientMsgId}`);
+								debugLog("exists:",dsImage.exists);
+								debugLog("config:", dsImage.config);
+								debugLog("data:", dsImage.data ? dsImage.data.length+' rows' : null);
+
 								base.stores.data.save(base, node, dsImage);
 							}
 							break;
 						case 'tbShowDatastore':		// for testing
-							if (!inMap(node.lastClientMsgs,msg.clientMsgId,""))
+							if (!node.multiUser && !inMap(node.lastClientMsgs,msg.clientMsgId,""))
 							{
-								let data = base.stores.data.get(id) || "<null>";
+								let data = base.stores.data.get(id) || "<none>";
 								console.log("Datastore image for node "+node.id+":",data);
 								if (msg.sendMsg)
 									node.send({payload:data});
 							}
 							break;
 						case 'tbClearDatastore':
-							if (!inMap(node.lastClientMsgs,msg.clientMsgId,""))
+							if (!node.multiUser && !inMap(node.lastClientMsgs,msg.clientMsgId,""))
 							{
 								debugLog("Setting dummy to datastore: node.id="+node.id);
 								base.stores.data.save(base, node, dsDummyImage);
@@ -146,23 +158,23 @@ module.exports = function (RED) {
 		//--------------------------------------------------------
 		//Initialize Datastore
 		//--------------------------------------------------------
-//		if (node.multiUser)
-//			base.stores.data.clear(node.id);
-//		else
-//		{
-			// Set a "dummy" object in the data store to ensure 'widget-load' notification
+		if (node.multiUser)
+			base.stores.data.clear(node.id);
+		else
+		{
+			// Set a "dummy" object in the data store to ensure 'widget-load' notification - to do: NR has been fixed, can discard this
 			let dsImage = base.stores.data.get(node.id);
 			debugLog(node.id+": current datastore image=",dsImage ||'<none>');
 			if (!dsImage)
 				base.stores.data.save(base, node, dsDummyImage);
-//		}
+		}
 		//--------------------------------------------------------
 		// inform the dashboard UI that we are adding this node
 		//--------------------------------------------------------
         if (group) {
-            group.register(node, config, evts)
+            group.register(node, config, evts);
         } else {
-            node.error('No group configured')
+            node.error('No group configured');
         }
 		//--------------------------------------------------------
 		// read theme CSS file, if configured
@@ -264,17 +276,20 @@ function inMap(map,key,val)
 {
 	const maxMapSize = 10;
 
+	if (!key)
+		return false;
+
 	if (map.has(key))
 		return true;
 
 	map.set(key, val);
-	let txt = `inserted to map: key=${key},val=${val}, `;
+	//let txt = `inserted to map: key=${key},val=${val}, `;
 	
 	if (map.size > maxMapSize)
 	{
 		const firstElement = map.entries().next().value;
 		map.delete(firstElement[0]);
-		txt = txt.replace('inserted to','replaced in');
+		//txt = txt.replace('inserted to','replaced in');
 	}
 	//console.log("map=",map);
 	//console.log(txt+'current map size='+map.size);
