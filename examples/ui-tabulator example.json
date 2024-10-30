@@ -21,7 +21,7 @@
             "81390a50f1f63b64"
         ],
         "x": 454,
-        "y": 639,
+        "y": 699,
         "w": 302,
         "h": 122
     },
@@ -62,14 +62,12 @@
             "13031aa90a264db7",
             "c963124b97b427d1",
             "7fdaf376a44b8d49",
-            "9e18bd8b47c97773",
-            "2cdfb8c12b389941",
-            "724572d32d81d2e6"
+            "9e18bd8b47c97773"
         ],
         "x": 14,
         "y": 19,
         "w": 392,
-        "h": 202
+        "h": 162
     },
     {
         "id": "1117663602763c33",
@@ -87,7 +85,7 @@
             "d040291ed84db657"
         ],
         "x": 14,
-        "y": 239,
+        "y": 199,
         "w": 342,
         "h": 202
     },
@@ -137,7 +135,7 @@
             "942a7f85d21cd6b3"
         ],
         "x": 14,
-        "y": 459,
+        "y": 419,
         "w": 392,
         "h": 322
     },
@@ -145,7 +143,7 @@
         "id": "cad1504ee1148798",
         "type": "group",
         "z": "defcf8ff528868a9",
-        "name": "UI-Originated Commands",
+        "name": "UI-Originated Commands (Client-specific)",
         "style": {
             "label": true,
             "color": "#000000"
@@ -153,12 +151,16 @@
         "nodes": [
             "f0eb30740a7fd744",
             "6f7e64290121b77b",
-            "1fc64646574a4db2"
+            "1fc64646574a4db2",
+            "5a540f2852283daa",
+            "5f044a40b9dc1055",
+            "294d21187f42c819",
+            "724572d32d81d2e6"
         ],
         "x": 454,
         "y": 519,
-        "w": 312,
-        "h": 82
+        "w": 362,
+        "h": 162
     },
     {
         "id": "493c9986920ec2d2",
@@ -240,7 +242,7 @@
         "onceDelay": 0.1,
         "topic": "",
         "x": 130,
-        "y": 540,
+        "y": 500,
         "wires": [
             [
                 "5afc770e33a1f998"
@@ -271,7 +273,7 @@
         "onceDelay": 0.1,
         "topic": "",
         "x": 120,
-        "y": 280,
+        "y": 240,
         "wires": [
             [
                 "a13b0f277c69cf95"
@@ -328,7 +330,7 @@
         "onceDelay": 0.1,
         "topic": "",
         "x": 130,
-        "y": 400,
+        "y": 360,
         "wires": [
             [
                 "a13b0f277c69cf95"
@@ -390,7 +392,7 @@
         "onceDelay": 0.1,
         "topic": "",
         "x": 120,
-        "y": 740,
+        "y": 700,
         "wires": [
             [
                 "c86666683436d68a"
@@ -421,7 +423,7 @@
         "onceDelay": 0.1,
         "topic": "",
         "x": 580,
-        "y": 680,
+        "y": 740,
         "wires": [
             [
                 "81390a50f1f63b64"
@@ -524,7 +526,7 @@
         "resendOnRefresh": true,
         "templateScope": "page:style",
         "className": "",
-        "x": 640,
+        "x": 610,
         "y": 60,
         "wires": [
             []
@@ -547,7 +549,7 @@
         "tblDivId": "",
         "width": "9",
         "height": "3",
-        "x": 630,
+        "x": 640,
         "y": 120,
         "wires": [
             [
@@ -625,7 +627,7 @@
         "onceDelay": 0.1,
         "topic": "",
         "x": 570,
-        "y": 720,
+        "y": 780,
         "wires": [
             [
                 "81390a50f1f63b64"
@@ -677,7 +679,7 @@
         "onceDelay": 0.1,
         "topic": "",
         "x": 150,
-        "y": 580,
+        "y": 540,
         "wires": [
             [
                 "0ec1989a28a1c6cc"
@@ -708,7 +710,7 @@
         "onceDelay": 0.1,
         "topic": "",
         "x": 110,
-        "y": 620,
+        "y": 580,
         "wires": [
             [
                 "c86666683436d68a"
@@ -739,7 +741,7 @@
         "onceDelay": 0.1,
         "topic": "",
         "x": 120,
-        "y": 700,
+        "y": 660,
         "wires": [
             [
                 "c86666683436d68a"
@@ -765,7 +767,7 @@
         "onceDelay": 0.1,
         "topic": "",
         "x": 120,
-        "y": 500,
+        "y": 460,
         "wires": [
             [
                 "1fa6283821e966fb"
@@ -854,7 +856,7 @@
             "20bfc0f8799a929b"
         ],
         "x": 315,
-        "y": 340,
+        "y": 300,
         "wires": []
     },
     {
@@ -868,7 +870,7 @@
             "20bfc0f8799a929b"
         ],
         "x": 715,
-        "y": 700,
+        "y": 760,
         "wires": []
     },
     {
@@ -931,7 +933,7 @@
         "onceDelay": 0.1,
         "topic": "",
         "x": 130,
-        "y": 320,
+        "y": 280,
         "wires": [
             [
                 "a13b0f277c69cf95"
@@ -962,7 +964,7 @@
         "onceDelay": 0.1,
         "topic": "",
         "x": 110,
-        "y": 360,
+        "y": 320,
         "wires": [
             [
                 "a13b0f277c69cf95"
@@ -983,7 +985,7 @@
         "finalize": "",
         "libs": [],
         "x": 275,
-        "y": 500,
+        "y": 460,
         "wires": [
             [
                 "c86666683436d68a"
@@ -1002,7 +1004,7 @@
             "20bfc0f8799a929b"
         ],
         "x": 365,
-        "y": 620,
+        "y": 580,
         "wires": []
     },
     {
@@ -1019,7 +1021,7 @@
         "finalize": "",
         "libs": [],
         "x": 275,
-        "y": 540,
+        "y": 500,
         "wires": [
             [
                 "c86666683436d68a"
@@ -1041,32 +1043,10 @@
         "finalize": "",
         "libs": [],
         "x": 275,
-        "y": 580,
+        "y": 540,
         "wires": [
             [
                 "c86666683436d68a"
-            ]
-        ],
-        "l": false
-    },
-    {
-        "id": "724572d32d81d2e6",
-        "type": "function",
-        "z": "defcf8ff528868a9",
-        "g": "ccac38d9c099129d",
-        "name": "function 85",
-        "func": "let dt = new Date();\nlet dateStr = String(dt.getFullYear()) +\n\tString(dt.getMonth() + 1).padStart(2, '0') +\n\tString(dt.getDate()).padStart(2, '0');\n\nmsg.tbArgs = [\"csv\",`table_export_${dateStr}.csv`];\nreturn msg;",
-        "outputs": 1,
-        "timeout": 0,
-        "noerr": 0,
-        "initialize": "",
-        "finalize": "",
-        "libs": [],
-        "x": 245,
-        "y": 180,
-        "wires": [
-            [
-                "9e18bd8b47c97773"
             ]
         ],
         "l": false
@@ -1095,36 +1075,10 @@
         "onceDelay": 0.1,
         "topic": "",
         "x": 130,
-        "y": 660,
+        "y": 620,
         "wires": [
             [
                 "c86666683436d68a"
-            ]
-        ]
-    },
-    {
-        "id": "2cdfb8c12b389941",
-        "type": "inject",
-        "z": "defcf8ff528868a9",
-        "g": "ccac38d9c099129d",
-        "name": "Export to file",
-        "props": [
-            {
-                "p": "tbCmd",
-                "v": "download",
-                "vt": "str"
-            }
-        ],
-        "repeat": "",
-        "crontab": "",
-        "once": false,
-        "onceDelay": 0.1,
-        "topic": "",
-        "x": 130,
-        "y": 180,
-        "wires": [
-            [
-                "724572d32d81d2e6"
             ]
         ]
     },
@@ -1181,7 +1135,7 @@
         "name": "",
         "label": "Group By",
         "order": 2,
-        "width": "2",
+        "width": "1",
         "height": "1",
         "emulateClick": true,
         "tooltip": "",
@@ -1197,6 +1151,13 @@
         "buttonColor": "",
         "textColor": "",
         "iconColor": "",
+        "enableClick": true,
+        "enablePointerdown": false,
+        "pointerdownPayload": "",
+        "pointerdownPayloadType": "str",
+        "enablePointerup": false,
+        "pointerupPayload": "",
+        "pointerupPayloadType": "str",
         "x": 540,
         "y": 560,
         "wires": [
@@ -1215,8 +1176,8 @@
         "links": [
             "20bfc0f8799a929b"
         ],
-        "x": 725,
-        "y": 560,
+        "x": 775,
+        "y": 600,
         "wires": []
     },
     {
@@ -1225,15 +1186,139 @@
         "z": "defcf8ff528868a9",
         "g": "cad1504ee1148798",
         "name": "function 90",
-        "func": "msg.tbCmd = \"tbSetGroupBy\";\nmsg.tbFields = [\"gender\"];\nmsg. tbGroupHeader = '<b>$field</b>, value=<span style=\"color:red\">$value</span>, count=$count'\nreturn msg;\n",
+        "func": "msg.tbCmd = \"tbSetGroupBy\";\nmsg.tbFields = [\"gender\"];\nmsg. tbGroupHeader = '<b>$field</b>, value=<span style=\"color:red\">$value</span>, count=$count'\nmsg.tbDoNotReply = true;\nreturn msg;\n",
         "outputs": 1,
         "timeout": 0,
         "noerr": 0,
         "initialize": "",
         "finalize": "",
         "libs": [],
-        "x": 665,
+        "x": 705,
         "y": 560,
+        "wires": [
+            [
+                "6f7e64290121b77b"
+            ]
+        ],
+        "l": false
+    },
+    {
+        "id": "5a540f2852283daa",
+        "type": "ui-button",
+        "z": "defcf8ff528868a9",
+        "g": "cad1504ee1148798",
+        "group": "70c8e6416fd84914",
+        "name": "",
+        "label": "Ungroup",
+        "order": 3,
+        "width": "1",
+        "height": "1",
+        "emulateClick": true,
+        "tooltip": "",
+        "color": "",
+        "bgcolor": "",
+        "className": "",
+        "icon": "",
+        "iconPosition": "left",
+        "payload": "",
+        "payloadType": "str",
+        "topic": "topic",
+        "topicType": "msg",
+        "buttonColor": "",
+        "textColor": "",
+        "iconColor": "",
+        "enableClick": true,
+        "enablePointerdown": false,
+        "pointerdownPayload": "",
+        "pointerdownPayloadType": "str",
+        "enablePointerup": false,
+        "pointerupPayload": "",
+        "pointerupPayloadType": "str",
+        "x": 600,
+        "y": 600,
+        "wires": [
+            [
+                "5f044a40b9dc1055"
+            ]
+        ]
+    },
+    {
+        "id": "5f044a40b9dc1055",
+        "type": "function",
+        "z": "defcf8ff528868a9",
+        "g": "cad1504ee1148798",
+        "name": "function 93",
+        "func": "msg.tbCmd = \"tbSetGroupBy\";\nmsg.tbDoNotReply = true;\nreturn msg;\n",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 705,
+        "y": 600,
+        "wires": [
+            [
+                "6f7e64290121b77b"
+            ]
+        ],
+        "l": false
+    },
+    {
+        "id": "294d21187f42c819",
+        "type": "ui-button",
+        "z": "defcf8ff528868a9",
+        "g": "cad1504ee1148798",
+        "group": "70c8e6416fd84914",
+        "name": "Export",
+        "label": "Export",
+        "order": 4,
+        "width": "1",
+        "height": "1",
+        "emulateClick": true,
+        "tooltip": "",
+        "color": "",
+        "bgcolor": "",
+        "className": "",
+        "icon": "",
+        "iconPosition": "left",
+        "payload": "",
+        "payloadType": "str",
+        "topic": "topic",
+        "topicType": "msg",
+        "buttonColor": "",
+        "textColor": "",
+        "iconColor": "",
+        "enableClick": true,
+        "enablePointerdown": false,
+        "pointerdownPayload": "",
+        "pointerdownPayloadType": "str",
+        "enablePointerup": false,
+        "pointerupPayload": "",
+        "pointerupPayloadType": "str",
+        "x": 610,
+        "y": 640,
+        "wires": [
+            [
+                "724572d32d81d2e6"
+            ]
+        ]
+    },
+    {
+        "id": "724572d32d81d2e6",
+        "type": "function",
+        "z": "defcf8ff528868a9",
+        "g": "cad1504ee1148798",
+        "name": "function 85",
+        "func": "let dt = new Date();\nlet dateStr = String(dt.getFullYear()) +\n\tString(dt.getMonth() + 1).padStart(2, '0') +\n\tString(dt.getDate()).padStart(2, '0');\n\nmsg.tbCmd = \"download\";\nmsg.tbArgs = [\"csv\",`table_export_${dateStr}.csv`];\nreturn msg;",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 705,
+        "y": 640,
         "wires": [
             [
                 "6f7e64290121b77b"
@@ -1272,7 +1357,7 @@
                 "cols": "12"
             }
         ],
-        "order": 1,
+        "order": 2,
         "className": "",
         "visible": true,
         "disabled": false
@@ -1355,7 +1440,7 @@
                 "cols": "12"
             }
         ],
-        "order": 7,
+        "order": 8,
         "className": "",
         "visible": "true",
         "disabled": "false"

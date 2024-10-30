@@ -1329,7 +1329,28 @@ function cloneObj(obj)
 //		clone = loadsh.cloneDeep(obj);
 //		clone = JSON.parse(JSON.stringify(obj));
 //		clone = RED.util.cloneMessage(obj);
-
+/*
+function deepClone(obj) {
+    if (obj === null || typeof obj !== 'object') {
+        return obj;
+    }
+    if (obj instanceof Date) {
+        return new Date(obj);
+    }
+    if (obj instanceof Array) {
+        return obj.map(item => deepClone(item));
+    }
+    if (obj instanceof Function) {
+        return obj.bind({});
+    }
+    const clonedObj = {};
+    for (let key in obj) {
+        if (obj.hasOwnProperty(key)) {
+            clonedObj[key] = deepClone(obj[key]);
+        }
+    }
+    return clonedObj;
+}*/
 	let clone = null;
 	try  {
 		clone = structuredClone(obj);

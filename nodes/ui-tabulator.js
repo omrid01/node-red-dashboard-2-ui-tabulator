@@ -162,11 +162,8 @@ module.exports = function (RED) {
 			base.stores.data.clear(node.id);
 		else
 		{
-			// Set a "dummy" object in the data store to ensure 'widget-load' notification - to do: NR has been fixed, can discard this
-			let dsImage = base.stores.data.get(node.id);
-			debugLog(node.id+": current datastore image=",dsImage ||'<none>');
-			if (!dsImage)
-				base.stores.data.save(base, node, dsDummyImage);
+			// Set a "dummy" object in the data store to ensure 'widget-load' notification (update: NR bug has been fixed, will discard this in the future)
+			base.stores.data.save(base, node, dsDummyImage);
 		}
 		//--------------------------------------------------------
 		// inform the dashboard UI that we are adding this node
