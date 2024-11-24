@@ -20,7 +20,9 @@ const sampleTblConfig = `{
         defaults: {
             name: { value: "" },
             group: { type: 'ui-group', required: true },
-			initObj: {value:sampleTblConfig, validate: function (v) {return (isValidJSON(v) === "")}},
+			initObj: {value:sampleTblConfig, validate: function (v) {return (!v || isValidJSON(v) === "")}},
+            funcs:   {value:""},
+			allowMsgFuncs:{ value: false },
 			maxWidth: { value: "" },
 			events: { value: "" },
             order: { value: 0 },
@@ -28,8 +30,7 @@ const sampleTblConfig = `{
 			validateRowIds: {value:false},
 			themeCSS: { value: "" },	// placeholder for initial load of theme file CSS
 			themeFile: { value: "" },
-			tblDivId:{ value: "", validate: function (v) {return (v.trim() === "" || v.match(/^[a-zA-Z_-][a-zA-Z0-9_-]*$/) !== null)} },
-//			passthru: { value: false },
+			tblDivId:{ value: "", validate: function (v) {const s = v?.trim(); return (s === "" || (s && s.match(/^[a-zA-Z_-][a-zA-Z0-9_-]*$/) !== null))} },
 			printToLog: { value: false },	// Tells client if to print console log messages
             width: {
                 value: 0,
@@ -51,6 +52,23 @@ const sampleTblConfig = `{
             return this.name || "ui-tabulator";
         },
         oneditprepare: function () {
+            const baseThis = this;
+            const stateId = RED.editor.generateViewStateId("node", this, "");
+
+			this.initObjEditor = RED.editor.createEditor({
+				id: 'node-input-initObj-editor',
+				mode: 'ace/mode/json',
+				//theme:"ace/theme/tomorrow",
+				value: this.initObj
+			});
+
+            this.funcsEditor = RED.editor.createEditor({
+                id: 'node-input-funcs-editor',
+                mode: 'ace/mode/javascript',
+                stateId: stateId,
+                // value: $("#node-input-funcs").val()
+                value: this.funcs
+            });
 
             $('#node-input-size').elementSizer({
                 width: '#node-input-width',
@@ -58,52 +76,105 @@ const sampleTblConfig = `{
                 group: '#node-input-group'
             });
 
-			var $editorScope = this;
-			this.editor = RED.editor.createEditor({
-				id: 'node-input-initObj-editor',
-				mode: 'ace/mode/json',
-				//theme:"ace/theme/tomorrow",
-				value: this.initObj
-			});
-			$("#node-input-check").on("click", function(evt)
-			{
-				let jsonStr = $editorScope.editor.getValue().trim();
-				let txt = isValidJSON(jsonStr);
-				if (txt === "")
-					alert("JSON syntax is valid");
-				else
-					alert(txt);	
-			});
-			$("#node-input-formatJson").on("click", function(evt)
-			{
-				let jsonStr = $editorScope.editor.getValue().trim();
-				let txt = isValidJSON(jsonStr);
-				if (txt === "")
-				{
-					let obj = JSON.parse(jsonStr);
-					$editorScope.editor.setValue(JSON.stringify(obj, null, '\t'),-1);
-					$editorScope.editor.clearSelection();
-				}
-				else
-					alert(txt);	
-			});
+			$("#node-initObj-check-btn").on("click", function(evt)  {checkJsonEditor(baseThis.initObjEditor)});
+			$("#node-initObj-format-btn").on("click", function(evt) {formatJsonEditor(baseThis.initObjEditor)});
+			$("#node-funcs-check-btn").on("click", function(evt)    {checkFuncsEditor(baseThis.funcsEditor)});
+			
+            RED.popover.tooltip($("#node-initObj-check-btn"), RED._("Check JSON syntax"));
+            RED.popover.tooltip($("#node-initObj-format-btn"), RED._("Format JSON"));
+            RED.popover.tooltip($("#node-initObj-expand-editor"), RED._("node-red:common.label.expand"));
+            RED.popover.tooltip($("#node-funcs-check-btn"), RED._("Check function formatting"));
+            RED.popover.tooltip($("#node-funcs-expand-editor"), RED._("node-red:common.label.expand"));
+
+            $("#node-initObj-expand-editor").on("click", function (e) {expandEditor(e,baseThis.initObjEditor,"json",stateId)});
+            $("#node-funcs-expand-editor").on("click", function (e) {expandEditor(e,baseThis.funcsEditor,"javascript",stateId)});
+		},
+/*
+            $("#node-funcs-expand-editor").on("click", function (e) {
+                e.preventDefault();
+                const value = baseThis.funcsEditor.getValue();
+                baseThis.funcsEditor.saveView();
+                RED.editor.editText({
+                    mode: 'json',
+                    value: value,
+                    stateId: stateId,
+                    width: "Infinity",
+                    focus: true,
+                    complete: function (v, cursor) {
+                        baseThis.funcsEditor.setValue(v, -1);
+                        setTimeout(function () {
+                            baseThis.funcsEditor.restoreView();
+                            baseThis.funcsEditor.focus();
+                        }, 250);
+                    }
+                })
+            })
         },
+*/	
         oneditsave: function() {
-          this.initObj = this.editor.getValue()
-          this.editor.destroy()
-          delete this.editor
+          this.initObj = this.initObjEditor.getValue()
+          this.initObjEditor.destroy()
+          delete this.initObjEditor
+		  
+          this.funcs = this.funcsEditor.getValue()
+          this.funcsEditor.destroy()
+          delete this.funcsEditor		
         },
         oneditcancel: function() {
-          this.editor.destroy()
-          delete this.editor
+          this.initObjEditor.destroy()
+          delete this.initObjEditor
+
+          this.funcsEditor.destroy()
+          delete this.funcsEditor
+        },
+		oneditresize: function(size) {
+            var rows = $("#dialog-form>div:not(.node-text-editor-row)");
+            var height = $("#dialog-form").height();
+            for (var i=0; i<rows.length; i++) {
+                height -= $(rows[i]).outerHeight(true);
+            }
+            var editorRow = $("#dialog-form>div.node-text-editor-row");
+            height -= (parseInt(editorRow.css("marginTop"))+parseInt(editorRow.css("marginBottom")));
+            $("#dialog-form .node-text-editor").css("height",height+"px");
+            this.initObjEditor.resize();
+            this.funcsEditor.resize();
         }
     });
 
 // My functions
 //-------------
+function checkJsonEditor(editor)
+{
+	const jsonStr = editor.getValue();
+	const txt = isValidJSON(jsonStr);
+	if (txt === "")
+		alert("JSON syntax is valid");
+	else
+		alert(txt);	
+}
+function checkFuncsEditor(editor)
+{
+	const str = editor.getValue();
+	const funcNames = parseFuncs(str);
+	
+	alert(funcNames);	
+}
+function formatJsonEditor(editor)
+{
+	const jsonStr = editor.getValue();
+	const txt = isValidJSON(jsonStr);
+	if (txt === "")
+	{
+		const obj = JSON.parse(jsonStr);
+		editor.setValue(JSON.stringify(obj, null, '\t'),-1);
+		editor.clearSelection();
+	}
+	else
+		alert(txt);	
+}
 function isValidJSON(str)
 {
-	if (!str.trim())
+	if (!str?.trim())
 		return "";
 	try	{
 		let obj = JSON.parse(str);
@@ -113,6 +184,78 @@ function isValidJSON(str)
 		return "Syntax error: "+err.message;
 	}
 }
+function expandEditor(e,editor,mode,stateId)
+{
+	e.preventDefault();
+	const value = editor.getValue();
+	editor.saveView();
+	RED.editor.editText({
+		mode: mode,
+		value: value,
+		stateId: stateId,
+		width: "Infinity",
+		focus: true,
+		complete: function (v, cursor) {
+			editor.setValue(v, -1);
+			setTimeout(function () {
+				editor.restoreView();
+				editor.focus();
+			}, 250);
+		}
+	})
+}
+function parseFuncs(str)
+{
+	// const splitRegex = /function\s+(\w+)\s*\(([^)]*)\)\s*\{([^}]*)\}/msg; --- does not support nested {}
+	const splitRegex = /function\s+/g ; //split by the keyword 'function ' (the body must not have a 'function' keyword inside it, even as a comment)
+	const matchRegex = /\s*(\S+)\s*\(([^)]*)\)\s*([^]*)/;
+	
+	const pName = '[a-zA-Z_$][a-zA-Z0-9_$]*';  // JS function & param names an only have letters, digits, '$' and '_', and cannot start with a digit
+	const funcNameRegex	  = new RegExp('^'+pName+'$'); 
+	const funcParamsRegex = new RegExp(`^${pName}\\s*(,\\s*${pName}\\s*)*$|^\\s*$`); // zero or more params, comma-separated
+	const funcBodyRegex = /^\{[^]*\}$/;  // enclosed in curly brackets. Unable to check JS syntax validity here
+
+//	first, split into separate functions
+	let res = "Parsed functions:"+'\n';
+	const rawFuncs = str.split(splitRegex);
+	for (let i = 0 ; i < rawFuncs.length ; i++)
+	{
+		if (rawFuncs[i].trim() !== '')
+		{
+			// trim everything after the last '}'
+			const index = rawFuncs[i].lastIndexOf('}');
+			const func = (index !== -1) ? rawFuncs[i].substring(0,index + 1) : rawFuncs[i];
+
+			let match = func.match(matchRegex) // extract name, params & body
+			if (match !== null)
+			{
+				const name   = match[1].trim();
+				const params = match[2].trim();
+				const body   = match[3].trim();
+
+				res += (name+' ');
+				// check validity
+				if (!funcNameRegex.test(name))
+					res += ("->Invalid function name");
+				else
+				{
+					if (funcParamsRegex.test(params))
+					{
+						res += ('('+params.replace(/[\s]/g,'')+')');
+						if (!funcBodyRegex.test(body))
+							res += (" ->Invalid function body: "+body);
+					}
+					else
+						res += ('('+params+') ->Invalid function parameters');
+				}
+			}
+			else 
+				res += ("Invalid function definition: "+rawFuncs[i]);
+			res += '\n';
+		}
+    }
+    return res;
+}
 </script>
 
 <script type="text/html" data-template-name="ui-tabulator">
@@ -120,6 +263,7 @@ function isValidJSON(str)
         <label for="node-input-name"><i class="fa fa-tag"></i> Name</label>
         <input type="text" id="node-input-name" placeholder="Name">
     </div>
+
     <div class="form-row">
         <label for="node-input-group"><i class="fa fa-table"></i> Group</label>
         <input type="text" id="node-input-group">
@@ -130,15 +274,38 @@ function isValidJSON(str)
         <input type="hidden" id="node-input-height">
         <button class="editor-button" id="node-input-size"></button>
     </div>
-	<div class="Notes">Initial Table Configuration</div>
-	<div class="form-row" id="textField">
-		<!-- <label for="node-input-initObj-editor"> Table Configuration</label> -->
-		<div style="height: 350px; min-height:150px;" class="node-text-editor" id="node-input-initObj-editor"></div>
+
+    <div class="form-row" style="position: relative; margin-bottom: 0px;">
+        <label for="node-input-initObj" style="width: auto;white-space: nowrap;"><i class="fa fa-file-code-o"></i><span data-i18n="template.label.template"> Initial Table Configuration</span></label>
+        <!-- <input type="hidden" id="node-input-initObj" autofocus="autofocus">  -->
+        <div style="position: absolute; right:0;display:inline-block; text-align: right; font-size: 0.8em;">
+            <button type="button" id="node-initObj-check-btn" class="red-ui-button red-ui-button-small">Check</button>
+            <button type="button" id="node-initObj-format-btn" class="red-ui-button red-ui-button-small">Format</button>
+            <button type="button" id="node-initObj-expand-editor" class="red-ui-button red-ui-button-small"><i class="fa fa-expand"></i></button>
+        </div>
 	</div>
-    <div class="form-row">
-        <button type="button" id="node-input-check" class="red-ui-button">Check Syntax</button>
-        <button type="button" id="node-input-formatJson" class="red-ui-button">Format JSON</button>
+	<div class="form-row node-text-editor-row">
+		<div style="height: 250px; min-height:150px;" class="node-text-editor" id="node-input-initObj-editor"></div>
+	</div>
+
+    <div class="form-row" style="position: relative; margin-bottom: 0px;">
+        <label for="node-input-funcs" style="width: auto;white-space: nowrap;"><i class="fa fa-file-code-o"></i> <span data-i18n="template.label.template"> Custom Functions</span></label>
+        <!-- <input type="hidden" id="node-input-funcs" autofocus="autofocus">  -->
+        <div style="position: absolute; right:0;display:inline-block; text-align: right; font-size: 0.8em;">
+            <button type="button" id="node-funcs-check-btn" class="red-ui-button red-ui-button-small">Check</button>
+            <button type="button" id="node-funcs-expand-editor" class="red-ui-button red-ui-button-small"><i class="fa fa-expand"></i></button>
+        </div>
     </div>
+
+	<div class="form-row node-text-editor-row">
+        <div style="height: 40px; min-height:20px;max-height:40px;" class="node-text-editor" id="node-input-funcs-editor" ></div>
+    </div>
+
+    <div style="margin-bottom:20px">
+        <input type="checkbox" style="vertical-align:top;" id="node-input-allowMsgFuncs"/>&nbsp
+		<label style="display:inline-block" for="node-input-allowMsgFuncs">Allow functions in messages </label>
+    </div>
+
 	<div class="form-row">
         <label for="node-input-maxWidth"><i class="fa fa-tag"></i> Max Width</label>
         <input type="text" id="node-input-maxWidth" placeholder="Max table width (%, px, em etc.)">
@@ -147,7 +314,7 @@ function isValidJSON(str)
         <label for="node-input-events"><i class="fa fa-tag"></i> Notifications</label>
         <input type="text" id="node-input-events" placeholder="Comma-separated string">
     </div>
-    <div>
+    <div style="margin-top:20px">
         <input type="checkbox" style="vertical-align:top;" id="node-input-multiUser"/>&nbsp
 		<label style="display:inline-block" for="node-input-multiUser">Multi-User Mode</label>
     </div>
@@ -163,12 +330,6 @@ function isValidJSON(str)
     </div>
 	<div class="form-row">
         <label for="node-input-tblDivId"><i class="fa fa-tag"></i> DIV Override</label>
-        <input type="text" id="node-input-tblDivId" placeholder="Optional: DIV Id to override default">
+        <input type="text" id="node-input-tblDivId" placeholder="Optional: DIV Id to override auto-assigned DIV">
     </div>
-<!--
-    <div>
-        <input type="checkbox" style="vertical-align:top;" id="node-input-passthru"/>&nbsp
-		<label style="display:inline-block" for="node-input-passthru">Pass through messages from input</label>
-    </div>
--->
 </script>

@@ -36,33 +36,43 @@ export default {
                 { label: 'Text & Typography', url: 'https://vuetifyjs.com/en/styles/text-and-typography/#typography' }
             ],
 			// Table properties
-			tbl: 		 	null,	// Table object
+			tbl: 		 	null,	// reference to table object
 			tblReady:	 	false,	// Indicates that table has completed initializing
-			tblDivId:		"",		// Optional, allow table instantiation on a specified Div, & access to the table from other template nodes, via Tabulator.findTable()
-			rowIdField:		"id",	// The name of the field which holds the unique row Id (the default is 'id', but can be overriden)
-			origTblConfig:	null,	// holds the original table configuration & data, as configured in the node (converted from JSON to an object). null=no tbl config in node
-			currTblConfig:	null,	// Current (active) table configuration (excluding data). null = no table widget
-			tblStyleMap:	null 	// The styles assigned to the table (via the tbSetStyle command)
+			tblDivId:		"",		// Optional, allow table instantiation on a specified Div
+			rowIdField:		"id",	// The name of the field which holds the unique row Id (the default is 'id', but can be overridden)
+
+			origTblConfig:	null,	// original table configuration, as configured in the node (converted from JSON to an object). null=no tbl config in node
+			origTblFuncs:	null,	// the custom functions configured in the node (converted from JSON to an object). null=no functions
+
+			activeTblConfig:null,	// active table configuration (excluding data & funcs). null=no active table
+			activeTblFuncs:	null,	// active funcs (custom formatters). null = none
+			tblStyleMap:	null 	// styles assigned to the active table (via the tbSetStyle command)
 		}
     },
 // ******************************************************************************************************************************************
     mounted () {
-		var $widgetScope = this; // Save the 'this' scope for socket listener, callbacks, external functions etc.
+		const $widgetScope = this; // Save the 'this' scope for socket listener, callbacks, external functions etc.
 		
 		window.tbPrintToLog = this.props.printToLog;
 		debugLog(`***ui-tabulator node ${this.id} mounted on client ${this.$socket.id}, debug=${window.tbPrintToLog?"on":"off"}`);
 
-		// parse the original table configuration & data (which were configured in the node)
+		// parse the original table configuration & funcs (from node configuration)
 		const cfgStr = this.props.initObj?.trim();
 		if (cfgStr)
 		{
+			let cfg = null;
 			try  {
-				this.origTblConfig = JSON.parse(cfgStr);
+				cfg = JSON.parse(cfgStr);
 			}
 			catch (err) {
+				cfg = null;
 				console.error(this.id+": Invalid table configuration:",err);
-				this.origTblConfig = null;
-			}	
+			}
+			if (cfg)
+			{
+				this.origTblConfig = cfg;
+				this.origTblFuncs  = parseFuncSheet(this.props.funcs);
+			}
 		}
 		
 		// Load CSS theme
@@ -124,7 +134,7 @@ export default {
     },
 // ******************************************************************************************************************************************
     unmounted () {
-		destroyTable(this,null);
+		destroyTable(this);
 
         /* Make sure, any events you subscribe to on SocketIO are unsubscribed to here */
         this.$socket?.off('widget-load:' + this.id)
@@ -135,7 +145,6 @@ export default {
     methods: {
         //  widget-action just sends a msg to Node-RED, it does not store the msg state server-side
         //  alternatively, you can use widget-change, which will also store the msg in the Node's datastore
-		
 		send(msg) {
 			// this.$socket.emit('widget-action', this.id, msg)
 			
@@ -148,15 +157,15 @@ export default {
             msg.tbClientCmd = cmd;
             this.$socket.emit('tbClientCommands'/*+this.id*/, this.id, msg)
         },
-		saveToDatastore(exists,config,data,styleMap,clientMsgId)	{
+		saveToDatastore(config,funcs,data,styleMap,clientMsgId)	{
 			let dsMsg = {};
             dsMsg.tbClientCmd = 'tbSaveToDatastore';
 			dsMsg.clientMsgId = clientMsgId;
 			dsMsg.payload = {
 				timestamp: Date.now(),
 				clientMsgId: clientMsgId,
-				exists: exists,
 				config: config,
+				funcs: funcs,
 				data:   data,
 				styleMap: styleMap
 			}
@@ -235,6 +244,7 @@ function processMsg(msg,$widgetScope)
 {
 	delete msg.error;
 	const cmd = msg.tbCmd;
+	
 	//------------------------------------------------------------------
 	// Node commands
 	//------------------------------------------------------------------
@@ -242,13 +252,54 @@ function processMsg(msg,$widgetScope)
 	{
 		case "tbCreateTable":
 			debugLog($widgetScope.id+": creating table from msg");
-			createTable(msg.tbInitObj,$widgetScope,msg,null,true);
+			if (!msg.tbInitObj)
+			{
+				msg.error = "Invalid table configuration";
+				$widgetScope.send(msg);
+				return;
+			}
+			if (!$widgetScope.props.allowMsgFuncs && (!!msg.tbFuncs || hasInlineFuncs(msg.tbInitObj)))
+			{
+				msg.error = "Messages containing function definitions are blocked in the node configuration";
+				$widgetScope.send(msg);
+				return;
+			}
+			
+			const funcs = parseFuncSheet(msg.tbFuncs);
+			createTable(msg.tbInitObj,funcs,$widgetScope)
+			    .then(result => { 
+					if (!$widgetScope.props.multiUser)
+					{
+						const data = msg.tbInitObj.data || [];
+						$widgetScope.saveToDatastore($widgetScope.activeTblConfig,funcs,data,null,msg._msgid);
+					}
+					msg.payload = result;				
+					$widgetScope.send(msg);
+				})
+				.catch(error => {
+					msg.error = error;
+					$widgetScope.send(msg);
+				});
 			return; 
 		case "tbResetTable":
 			debugLog($widgetScope.id+": reloading table from node configuration");
 			if (!$widgetScope.props.multiUser)  // Clear datastore
 				$widgetScope.clearDatastore(msg._msgid);
-			createTable($widgetScope.origTblConfig,$widgetScope,msg,null,false);
+			if ($widgetScope.origTblConfig)
+				createTable($widgetScope.origTblConfig,$widgetScope.origTblFuncs,$widgetScope)
+			    .then(result => { 
+					msg.payload = "Table reset to original configuration";
+					$widgetScope.send(msg);
+				})
+				.catch(error => {
+					msg.error = error;
+					$widgetScope.send(msg);
+				});
+			else
+			{
+				destroyTable($widgetScope);
+				$widgetScope.send(msg);
+			}
 			return;
 		case "tbCellEditSync":	// internal command notifying an in-cell edit in another client
 			debugLog($widgetScope.id+": received cell edit sync");
@@ -311,17 +362,40 @@ function processMsg(msg,$widgetScope)
 		case "tbDestroyTable":
 		case "destroy":  // Overloads Tabulator.destroy(), to enable graceful cleanup
 			destroyTable($widgetScope,msg,true);
+			if (!$widgetScope.props.multiUser)
+				$widgetScope.saveToDatastore(null,null,null,null,msg._msgid);
+				$widgetScope.send(msg);
 			return; 
 		case "tbSetStyle":
 			setStyle(msg.tbScope,msg.tbStyles,$widgetScope,msg);
 			return; 
 		case "tbClearStyles":
-			debugLog($widgetScope.id+": clearing styles, reloading table with current config & data");
-			let cfg = cloneObj($widgetScope.currTblConfig);
-			cfg.data = $widgetScope.tbl.getData();
-			createTable(cfg,$widgetScope,msg,null,true);
+			if ($widgetScope.activeTblConfig)
+			{
+				debugLog($widgetScope.id+": clearing styles, reloading table with current config & data");
+				const cfg = cloneObj($widgetScope.activeTblConfig);
+				const data = $widgetScope.tbl.getData();
+				cfg.data = data;
+				createTable(cfg,$widgetScope.activeTblFuncs,$widgetScope)
+					.then(result => { 
+						if (!$widgetScope.props.multiUser)
+							$widgetScope.saveToDatastore($widgetScope.activeTblConfig,$widgetScope.activeTblFuncs,data,null,msg._msgid);
+						msg.payload = "Table styles cleared";
+						$widgetScope.send(msg);
+					})
+					.catch(error => {
+						msg.error = error;
+						$widgetScope.send(msg);
+					});
+			}
 			return;
 		case "tbSetGroupBy":
+			if (!$widgetScope.props.allowMsgFuncs && msg.hasOwnProperty("tbGroupHeader") && hasInlineFuncs(msg.tbGroupHeader))
+			{
+				msg.error = "Messages containing function definitions are blocked in the node configuration";
+				$widgetScope.send(msg);
+				return;
+			}
 			setGroupBy($widgetScope,msg);
 			return;
 		//------------------------------------------------------------------
@@ -499,61 +573,50 @@ function updateAndRespond(msg,$widgetScope)
 	$widgetScope.send(msg);
 }
 // ********************************************************************************************************************
-function createTable(initObj,$widgetScope,msg,styleMap,saveToDS)
+function createTable(cfg,funcs,$widgetScope)
+//-------------------------------------------------------------------------------------------------------------
+// Called asynchronously from: Initial load, tbCreateTable command, tbResetTable command, tbClearStyles command
+//-------------------------------------------------------------------------------------------------------------
 {
-	//-----------------------------------------------------------------------------------------------------------------
-	// Called from:
-	// 1. Initial load - no msg/response, no DS update. if from DS, can include styles
-	// 2. tbCreateTable command - msg/response, no styles, update DS
-	// 3. tbResetTable command - msg/response, no styles, no update DS (DS is cleared before)
-	// 4. tbClearStyles command - msg/response, no styles, update DS
-	//-----------------------------------------------------------------------------------------------------------------
+return new Promise((resolve, reject) => {
 
-	// if coming from a 'tbCreateTable', validate the input and return if invalid
-	if (msg?.tbCmd === "tbCreateTable")
+	if (!cfg)
 	{
-		if (!initObj)
-		{
-			msg.error = "Invalid table configuration";
-			$widgetScope.send(msg);
-			return;
-		}
-		// Check row Id validity & no dups
-		if ($widgetScope.props.validateRowIds && initObj.hasOwnProperty("data"))
-		{
-			const idField = initObj.hasOwnProperty("index") ? initObj.index : "id";
-			if (!checkInputRowIds(initObj.data,idField))
-			{
-				msg.error = "Invalid or duplicate row Id's"; 
-				$widgetScope.send(msg);
-				return;
-			}
-		}
-	}
-		
-	if (!initObj)	// no initialization object --> destroy current table (if exists), return without creating a new table
-	{
-		destroyTable($widgetScope,msg,saveToDS);  // destroy current table (if exists)
-		if (msg)
-		{
-			msg.payload = "Table not created";
-			$widgetScope.send(msg);
-		}
+		reject("Invalid table configuration");
 		return;
 	}
 
-	destroyTable($widgetScope,null,false);  // destroy current table (if exists)
-	// pass a cloned configuration object (rather than an object reference), to protect the original object (from modification inside Tabulator)
-	const clonedInitObj = cloneObj(initObj);
+	// Check row Id validity & no dups
+	if (cfg.data && $widgetScope.props.validateRowIds)
+	{
+		const idField = cfg.hasOwnProperty("index") ? cfg.index : "id";
+		if (!checkInputRowIds(cfg.data,idField))
+		{
+			const errMsg = "Invalid or duplicate row Id's"; 
+			console.error(errMsg);
+			reject(errMsg);
+			return;
+		}
+	}
+
+	// clone the configuration object (rather than pass it as reference), to protect from proxy issues
+	const initObj = cloneObj(cfg);
+	if (setFuncs(initObj,funcs) > 0) // errCount > 0, but continue table creation with bad functions, so user doesn't panic and can troubleshoot
+	{
+		console.error("Missing or Invalid user-defined functions");
+		//reject("Missing or Invalid user-defined functions");
+		//return;
+	}
 
 	// Create a new table
+	//-------------------
+	destroyTable($widgetScope);  // destroy current table (if exists)
 	try  
 	{
-		// create the table
 		if (!$widgetScope.tblDivId)
-			$widgetScope.tbl = new Tabulator($widgetScope.$refs.tabulatorDiv, clonedInitObj);
+			$widgetScope.tbl = new Tabulator($widgetScope.$refs.tabulatorDiv, initObj);
 		else
-			$widgetScope.tbl = new Tabulator("#"+$widgetScope.tblDivId, clonedInitObj);
+			$widgetScope.tbl = new Tabulator("#"+$widgetScope.tblDivId, initObj);
 		
 			// console.log("Table created");
 			// $widgetScope.send({payload:"Table created"});
@@ -561,22 +624,9 @@ function createTable(initObj,$widgetScope,msg,styleMap,saveToDS)
 		// Table creation is asynchronous. The setup resumes after the table finished initializing, in the below "TableBuilt" callback
 		//-----------------------------------------------------------------------------------------------------------------------
 		$widgetScope.tbl.on("tableBuilt", function()    {
-			$widgetScope.tblReady = true;
 
-			$widgetScope.currTblConfig = cloneObj(initObj);
-			delete $widgetScope.currTblConfig.data;
-
-			if (styleMap)
-			{
-				$widgetScope.tblStyleMap = cloneObj(styleMap);
-				applyFromStyleMap(styleMap,$widgetScope.tbl)
-			}
-			else
-				//$widgetScope.tblStyleMap = new tbStyleMap();
-				$widgetScope.tblStyleMap = null;
-			
-			if (initObj.hasOwnProperty("index"))	// overriding the default 'id' field as the row identifier
-				$widgetScope.rowIdField = initObj.index;
+			if (cfg.hasOwnProperty("index"))	// overriding the default 'id' field as the row identifier
+				$widgetScope.rowIdField = cfg.index;
 
 			// Set notifications for the selected events 
 			setEventNotifications($widgetScope);
@@ -588,36 +638,22 @@ function createTable(initObj,$widgetScope,msg,styleMap,saveToDS)
 				$widgetScope.send(eventMsg);
 			}
 
-			if (!$widgetScope.props.multiUser && saveToDS)
-			{
-				const data = initObj.data || [];
-				$widgetScope.saveToDatastore(true,$widgetScope.currTblConfig,data,styleMap,msg?._msgid || "");
-			}
+			$widgetScope.tblReady = true;
+			$widgetScope.activeTblConfig = cloneObj(cfg);
+			delete $widgetScope.activeTblConfig.data;
+			if (funcs)
+				$widgetScope.activeTblFuncs = cloneObj(funcs);
 			console.log($widgetScope.id+": Table built and ready");
-			if (msg)
-			{
-				msg.payload = "Table built and ready";
-				$widgetScope.send(msg);
-			}
+            resolve("Table built and ready");
 		});  // on TableBuilt
 	}
 	catch (err)
 	{
 		console.error($widgetScope.id+": Table creation failed",err);
-		$widgetScope.tbl = null;
-		$widgetScope.tblReady = false;
-		$widgetScope.currTblConfig = null;
-		$widgetScope.tblStyleMap = null;
-
-		if (!$widgetScope.props.multiUser && saveToDS)
-			$widgetScope.saveToDatastore(false,null,null,null,msg?._msgid || "");
-		if (msg)
-		{
-			msg.payload = "Table creation failed";
-			msg.error = err.message;
-			$widgetScope.send(msg);
-		}
+		destroyTable($widgetScope);
+		reject("Table creation failed");
 	}	
+}); // promise
 }
 // ********************************************************************************************************************
 function initialTableLoad(dsImage,$widgetScope)
@@ -627,50 +663,47 @@ function initialTableLoad(dsImage,$widgetScope)
 	if ($widgetScope.props.multiUser || !dsImage || dsImage === "dummyDSImage")
 	{
 		if ($widgetScope.origTblConfig)
+		{
 			console.log($widgetScope.id+": Creating table from node configuration");
+			createTable($widgetScope.origTblConfig,$widgetScope.origTblFuncs,$widgetScope)
+			    .then(result => {}) //{console.log("tbl init success, result=",result)})
+				.catch(error => {}) //{console.error("tbl init error, err=",error)});
+		}
 		else
-			console.log($widgetScope.id+": No table configuration");
-
-		createTable($widgetScope.origTblConfig,$widgetScope,null,null,false);
+			console.log($widgetScope.id+": No table configuration, table not created.");
 		return;
 	}
 	
 	// shared mode with image in datastore
-	if (!dsImage.exists)  // stored image = 'no table' (not to confuse with 'no stored image')
+	if (!dsImage.config)  // stored image = 'no table' (not to confuse with 'no stored image')
 	{
-		console.log($widgetScope.id+": table configuration in datastore is null");
-		createTable(null,$widgetScope,null,null,false);
+		console.log($widgetScope.id+": null table configuration in datastore");
 		return;
 	}
 	
 	// image has table definition
 	console.log($widgetScope.id+": Creating table from datastore image");
-	let initObj;
-	if (dsImage.config)  // Stored image includes table configuration
-		initObj = dsImage.config;
-	else
-	{
-		initObj = cloneObj($widgetScope.origTblConfig);
-		delete initObj.data;
-	}
+	const initObj = dsImage.config;
 	if (dsImage.data)
 		initObj.data = dsImage.data;
 
 	// create the table
-	createTable(initObj,$widgetScope,null,dsImage.styleMap,false);
+	createTable(initObj,dsImage.funcs,$widgetScope)
+		.then(result => {
+			if (dsImage.styleMap)
+			{
+				applyFromStyleMap(dsImage.styleMap,$widgetScope.tbl);
+				$widgetScope.tblStyleMap = dsImage.styleMap;
+			}
+		})
+		.catch(error => {}) //{console.error("tbl init error, err=",error)});
 }
 // ********************************************************************************************************************
-function destroyTable($widgetScope,msg,saveToDS)
+function destroyTable($widgetScope)
 {
-	//-----------------------------------------------------------------------------------------------------------------
-	// Called from:
-	// 1. tbDestroyTable command - msg/response, update DS
-	// 2. from within createTable - 
-	//    - msg/response as in caller
-	//    - if table config OK, no DS update (DS is updated by the created table)
-	//    - if no table config, updates DS per caller argument ( to "no table")
-	// 3. unmounted() - no msg/response, no DS update
-	//-----------------------------------------------------------------------------------------------------------------
+	//--------------------------------------------------------------------------
+	// Called from: tbDestroyTable command, from within createTable, unmounted()
+	//--------------------------------------------------------------------------
 
 	if ($widgetScope.tbl)
 	{
@@ -680,25 +713,26 @@ function destroyTable($widgetScope,msg,saveToDS)
 	}
 	$widgetScope.tbl = null;
 	$widgetScope.tblReady = false;
-	$widgetScope.currTblConfig = null;
+	$widgetScope.activeTblConfig = null;
+	$widgetScope.activeTblFuncs = null;
 	$widgetScope.tblStyleMap = null;
-
-	if (!$widgetScope.props.multiUser && saveToDS)
-		$widgetScope.saveToDatastore(false,null,null,null,msg?._msgid || "");
-
-	if (msg)
-		$widgetScope.send(msg);
 }
 // ********************************************************************************************************************
 function updateDatastore($widgetScope,msg)
 {
-	if (!$widgetScope.currTblConfig)
+	if (!$widgetScope.activeTblConfig)
 	{
-		$widgetScope.saveToDatastore(false,null,null,null,msg?._msgid);
+		$widgetScope.saveToDatastore(null,null,null,null,msg?._msgid);
 		return;
 	}
 
-	$widgetScope.saveToDatastore(true,$widgetScope.currTblConfig,$widgetScope.tbl.getData(),$widgetScope.tblStyleMap,msg?._msgid);
+	$widgetScope.saveToDatastore(
+		$widgetScope.activeTblConfig,
+		$widgetScope.activeTblFuncs,
+		$widgetScope.tblReady ? $widgetScope.tbl.getData() : null,
+		$widgetScope.tblStyleMap,
+		msg?._msgid
+	);
 }
 // ********************************************************************************************************************
 function setStyle(scope,styles,$widgetScope,msg)
@@ -920,13 +954,28 @@ function applyFromStyleMap(map,tbl)
 // ********************************************************************************************************************
 function setGroupBy($widgetScope,msg)
 {
-	if (!msg.tbFields || msg.tbFields == "" || msg.tbFields == [])
-		$widgetScope.tbl.setGroupBy(false); // clear grouping
-	else
+	delete msg.error;
+	if (!msg.tbFields || (Array.isArray(msg.tbFields) && msg.tbFields.length === 0))
 	{
-		let fields = Array.isArray(msg.tbFields) ? msg.tbFields : [msg.tbFields];
-		$widgetScope.tbl.setGroupBy(fields);
-
+		$widgetScope.tbl.setGroupBy(false); // clear grouping
+		$widgetScope.send(msg);
+		return;
+	}
+	if (!msg.tbGroupHeader || (Array.isArray(msg.tbGroupHeader) && msg.tbGroupHeader.length === 0))
+	{
+		$widgetScope.tbl.setGroupBy(msg.tbFields);
+		$widgetScope.send(msg);
+		return;
+	}
+	const fields = Array.isArray(msg.tbFields)      ? msg.tbFields : [msg.tbFields];
+	const hdrs   = Array.isArray(msg.tbGroupHeader) ? msg.tbGroupHeader : [msg.tbGroupHeader];
+	
+	if (hdrs.length > 1 && hdrs.length !== fields.length)
+	{
+		msg.error = "Mismatch between grouping fields and headers";
+		$widgetScope.send(msg);
+		return;
+	}
 		/*
 		groupHeader:function(value, count, data, group){
 			//value - the value all members of this group share
@@ -934,39 +983,47 @@ function setGroupBy($widgetScope,msg)
 			//data - an array of all the row data objects in this group
 			//group - the group component for the group
 		*/
-		if (msg.tbGroupHeader) 
+	try {
+		const funcArray = [];
+		for (let i = 0 ; i < fields.length ; i++)
 		{
-			try {
-				if (fields.length === 1)
-					$widgetScope.tbl.setGroupHeader(function(value, count, data, group) {
-							let hdr = msg.tbGroupHeader;
-							hdr = hdr.replaceAll('$field',fields[0]);
-							hdr = hdr.replaceAll('$value',value);
-							hdr = hdr.replaceAll('$count',count);
-							// Set field counter in case of multiple grouping fields
-							return hdr;
-						});
+			const str = (hdrs.length === 1 ? hdrs[0] : hdrs[i]) || "";
+			if (TblFunc.prefix.test(str))
+			{
+				const funcDef = parseFuncProperty(str,$widgetScope.activeTblFuncs);
+				if (typeof funcDef === "string")	// i.e. error
+				{
+					msg.error = "Invalid or missing group header function";
+					$widgetScope.send(msg);
+					return;
+				}
+				const f = createFunc(funcDef);
+				if (typeof f === "function")
+					funcArray.push(f);
 				else
 				{
-					let funcArr = [];
-					for (let i = 0 ; i < fields.length ; i++)
-					{
-						let func = function(value, count, data, group) {
-							let hdr = msg.tbGroupHeader;
-							hdr = hdr.replaceAll('$field',fields[i]);
-							hdr = hdr.replaceAll('$value',value);
-							hdr = hdr.replaceAll('$count',count);
-							return hdr;
-						};
-						funcArr.push(func);
-					}
-					$widgetScope.tbl.setGroupHeader(funcArr);
+					msg.error = "Invalid group header function:"+f;
+					$widgetScope.send(msg);
+					return;
 				}
 			}
-			catch (err)	{
-				msg.error = "GroupBy error: "+err;
+			else
+			{
+				let func = function(value, count, data, group) {
+					let h = str;
+					h = h.replaceAll('$field',fields[i]);
+					h = h.replaceAll('$value',value);
+					h = h.replaceAll('$count',count);
+					return h;
+				};
+				funcArray.push(func);
 			}
+			$widgetScope.tbl.setGroupBy(msg.tbFields);
+			$widgetScope.tbl.setGroupHeader(funcArray.length !== 1 ? funcArray : funcArray[0]);
 		}
+	}
+	catch (err)	{
+		msg.error = "GroupBy error: "+err;
 	}
 	$widgetScope.send(msg);
 }
@@ -993,7 +1050,21 @@ function cellEditSync($widgetScope,msg)
 function tabulatorAsyncAPI(cmd,cmdArgs,msg,$widgetScope)
 {
 	debugLog("Calling '"+cmd+"', API mode=Async");
-	let args = cmdArgs ? cloneObj(cmdArgs) : [];	// for some reason, sometimes it doesn't work with the original args object
+	let args = cmdArgs ? cloneObj(cmdArgs) : [];	// Clone the args to avoid proxy issues
+
+	// Set functions into placeholder properties
+	if (!$widgetScope.props.allowMsgFuncs && hasInlineFuncs(args))
+	{
+		msg.error = "Messages containing function definitions are blocked in the node configuration";
+		$widgetScope.send(msg);
+		return;
+	}
+	if (setFuncs(args,$widgetScope.activeTblFuncs) > 0) // errCount > 0
+	{
+		msg.error = "Missing or invalid user-defined function";
+		$widgetScope.send(msg);
+		return;
+	}
 
 	$widgetScope.tbl[cmd](...args)
 		.then(function(xxx){
@@ -1007,8 +1078,22 @@ function tabulatorAsyncAPI(cmd,cmdArgs,msg,$widgetScope)
 function tabulatorSyncAPI(cmd,cmdArgs,msg,$widgetScope,parserFunc)
 {
 	debugLog("Calling '"+cmd+"', API mode=Sync");
-	let args = cmdArgs ? cloneObj(cmdArgs) : [];	// for some reason, sometime it doesn't work with the original args object
+	let args = cmdArgs ? cloneObj(cmdArgs) : [];	// Clone the args to avoid proxy issues
 	
+	// Set functions into placeholder properties
+	if (!$widgetScope.props.allowMsgFuncs && hasInlineFuncs(args))
+	{
+		msg.error = "Messages containing function definitions are blocked in the node configuration";
+		$widgetScope.send(msg);
+		return;
+	}
+	if (setFuncs(args,$widgetScope.activeTblFuncs) > 0) // errCount > 0
+	{
+		msg.error = "Missing or invalid user-defined function";
+		$widgetScope.send(msg);
+		return;
+	}
+
 	try  {
 		let data = $widgetScope.tbl[cmd](...args);
 		if (parserFunc)
@@ -1172,8 +1257,8 @@ function setEventNotifications($widgetScope)
 						eventMsg.dsImage = {
 							timestamp: Date.now(),
 							clientMsgId: eventMsg.notificationId,
-							exists: true,
-							config: $widgetScope.currTblConfig,
+							config: $widgetScope.activeTblConfig,
+							funcs: $widgetScope.activeTblFuncs,
 							data:   $widgetScope.tbl.getData(),
 							styleMap: $widgetScope.tblStyleMap
 						}
@@ -1323,14 +1408,209 @@ function checkAddedDupRows(rows,$widgetScope)
 	return true;
 */
 }
+//-------------------------------------------------------------
+// Table function management
+//-------------------------------------------------------------
+class TblFunc {
+	// Static members
+	static prefix = /^@F:\s*/;  // e.g. @F:myFunctionName, or @F:(a,b)=>{return a+b}
+  
+  //parse sheet
+	// const splitRegex = /function\s+(\w+)\s*\(([^)]*)\)\s*\{([^}]*)\}/msg; --- does not support nested {}
+	static splitToFuncs = /function\s+/g ; //splits by the keyword 'function' (->the function body must not have another 'function' keyword inside it, not even as a comment)
+	static matchNamed = /\s*(\S+)\s*\(([^)]*)\)\s*([^]*)/;  // Generic regex with 3 matching groups, to extract name, params & body
+	static matchUnnamed = /^\(([^)]*)\)\s*=>([^]*)/;  // regex with 2 matching groups, to extract params & body of an inline function
+
+	static pName = '[a-zA-Z_$][a-zA-Z0-9_$]*';  // JS function & param names can only have letters, digits, '$' and '_', and cannot start with a digit
+	static fName	  = new RegExp('^'+this.pName+'$'); 
+	static fParams = new RegExp(`^${this.pName}\\s*(,\\s*${this.pName}\\s*)*$|^\\s*$`); // zero or more params, comma-separated
+	static fBody = /^\{[^]*\}$/;  // checking if enclosed in curly brackets. Unable to check JS syntax validity
+	
+	static trimFuncTail(str)	{  //.replace(/([^]*})([^]*)/, '$1')
+		const index = str.lastIndexOf('}'); // Find the position of the last '}'
+        if (index !== -1) // If found, trim the remainder
+			return str.substring(0, index + 1);
+		else
+			return str;
+	}
+}
+function parseFuncSheet(str)
+{
+	if (!str)
+		return {};
+
+	const funcList = {};
+
+	//	first, split the sheet into separate function blocks
+	const rawFuncs = str.split(TblFunc.splitToFuncs);
+	for (let i = 0 ; i < rawFuncs.length ; i++)
+	{
+		if (rawFuncs[i].trim() !== '')
+		{
+			const func = TblFunc.trimFuncTail(rawFuncs[i]);  // trim out trailing text (e.g. comments) after the last '}'
+
+			const match = func.match(TblFunc.matchNamed) // extract name, params & body
+			if (match !== null)
+			{
+				const name   = match[1].trim();
+				const params = match[2].trim();
+				const body   = match[3].trim();
+
+				// test valididty
+				if (!TblFunc.fName.test(name))
+				{
+					console.warn("->Invalid function name:",name);
+					continue;
+				}
+				if (!TblFunc.fParams.test(params))
+				{
+					console.warn(`->Invalid function params: ${name} (${params})`);
+					continue;
+				}
+				if (!TblFunc.fBody.test(body))
+				{
+					console.warn(`->Invalid function body: ${name} (${params.replace(/[\s]/g,'')}) ${body}`);
+					continue;
+				}
+				let cleanParams = params.replace(/[\s]/g,'');
+				funcList[name] = {
+						params: cleanParams ? cleanParams.split(',') : [],
+						body: body
+					}
+			}
+			else 
+				console.warn("->Invalid function definition: "+func);
+		}
+    }
+    return funcList;
+}
+function parseFuncProperty(str,funcs)
+{
+	const func = str.replace(TblFunc.prefix,'').trim(); // strip off the prefix & surrounding whitespaces
+
+	if (TblFunc.fName.test(func))	// if function name only, lookup in predefined function list
+	{
+		if (funcs.hasOwnProperty(func))
+			return funcs[func];
+		else
+			return "Function not found";
+	}
+	
+	const match = func.match(TblFunc.matchUnnamed) // function is unnamed, extract params & body
+	if (match === null)
+		return "Invalid function definition";
+
+	const params = match[1].trim();
+	const body   = match[2].trim();
+
+	// test valididty
+	if (!TblFunc.fParams.test(params))
+		return "Invalid function params "+params;
+	if (!TblFunc.fBody.test(body))
+		return "Invalid function body "+body;
+
+	let cleanParams = params.replace(/[\s]/g,'');
+	const funcObj = {
+			params: cleanParams ? cleanParams.split(',') : [],
+			body: body
+		}
+    return funcObj;
+}
+function setFuncs(obj,funcs)
+{
+	let errCount = 0;
+
+	if (Array.isArray(obj))
+	{
+        for (let i = 0; i < obj.length; i++)
+		{
+            if (typeof obj[i] === 'string')
+			{
+				if (TblFunc.prefix.test(obj[i]))
+				{
+					let funcDef = parseFuncProperty(obj[i],funcs)
+					if (typeof funcDef === "string") // error
+					{
+						console.warn(funcDef);
+						errCount++;
+					}
+					else
+					{
+						const f = createFunc(funcDef);
+						if (typeof f === "function")
+							obj[i] = f;
+						else
+						{
+							console.warn(f);
+							errCount++;
+						}
+					}
+				}
+			}
+            else
+                errCount += setFuncs(obj[i],funcs);
+		}
+	}
+	else if (typeof obj === 'object' && obj !== null)
+	{
+		Object.keys(obj).forEach (key => {
+			if (typeof obj[key] === "string")
+			{
+				if (TblFunc.prefix.test(obj[key]))
+				{
+					let funcDef = parseFuncProperty(obj[key],funcs)
+					if (typeof funcDef === "string") // error
+					{
+						console.warn(funcDef);
+						errCount++;
+					}
+					else
+					{
+						const f = createFunc(funcDef);
+						if (typeof f === "function")
+							obj[key] = f;
+						else
+						{
+							console.warn(f);
+							errCount++;
+						}
+					}
+				}
+			}
+			else
+				errCount += setFuncs(obj[key],funcs)	// recurse through
+		});
+	}
+	return errCount;
+}	
+function hasInlineFuncs(obj)
+{
+	const matchRegex = /^@F:\s*\([^]*\)\s*=>/;
+
+    if (typeof obj === 'string')
+        return matchRegex.test(obj);
+	else if (Array.isArray(obj))
+		return obj.some(item => hasInlineFuncs(item));
+	else if (typeof obj === 'object' && obj !== null)
+        return Object.values(obj).some(value => hasInlineFuncs(value));
+    return false;
+}	
+function createFunc(funcObj)
+{
+	//const params = cloneObj(funcObj.params);
+	//const body   = cloneObj(funcObj.body);
+	try {
+		let f = new Function(...funcObj.params,funcObj.body);
+		return f;
+	}
+	catch (err)  {
+		// console.error(err);
+		return ("Invalid function: "+err);
+	}
+}
+//-----------------------------------------------------------------------------------------
 function cloneObj(obj)
 {
-// 		return structuredClone(obj);
-//		clone = loadsh.cloneDeep(obj);
-//		clone = JSON.parse(JSON.stringify(obj));
-//		clone = RED.util.cloneMessage(obj);
-/*
-function deepClone(obj) {
     if (obj === null || typeof obj !== 'object') {
         return obj;
     }
@@ -1338,19 +1618,24 @@ function deepClone(obj) {
         return new Date(obj);
     }
     if (obj instanceof Array) {
-        return obj.map(item => deepClone(item));
+        return obj.map(item => cloneObj(item));
     }
     if (obj instanceof Function) {
-        return obj.bind({});
+		// return obj.bind({});
+		return null;
     }
+
     const clonedObj = {};
-    for (let key in obj) {
-        if (obj.hasOwnProperty(key)) {
-            clonedObj[key] = deepClone(obj[key]);
-        }
-    }
-    return clonedObj;
-}*/
+	Object.keys(obj).forEach (key => {
+		clonedObj[key] = cloneObj(obj[key]);
+	});
+	// for (let key in obj) {
+	//    if (obj.hasOwnProperty(key)) { -- not ot take inherited properties
+	//        clonedObj[key] = deepClone(obj[key]);
+	//    }
+
+	return clonedObj;
+/*
 	let clone = null;
 	try  {
 		clone = structuredClone(obj);
@@ -1366,6 +1651,11 @@ function deepClone(obj) {
 		}
 	}
 	return null;
+*/
+	// 		return structuredClone(obj);
+	//		clone = loadsh.cloneDeep(obj);
+	//		clone = JSON.parse(JSON.stringify(obj));
+	//		clone = RED.util.cloneMessage(obj);
 }
 function createUniqueId()
 {

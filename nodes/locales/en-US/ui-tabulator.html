@@ -24,7 +24,7 @@ Enables to present, update &amp; query tables on the dashboard UI, using the pop
     <dt>Name, Group, Size <span class="property-type">various</span></dt>
     <dd>Standard properties as in all dashboard 2.0 nodes</dd>
     <dt class="optional">Initial Table Configuration <span class="property-type">JSON</span></dt>
-    <dd>Table/column definitions &amp; (optional) initial data, as described in <a href="https://www.tabulator.info/docs/6.2/quickstart#setup">Tabulator Setup</a>. For example:
+    <dd>Table/column definitions and (optional) initial data, as described in <a href="https://www.tabulator.info/docs/6.2/quickstart#setup">Tabulator Setup</a>. For example:
 	<pre><code>{
    "height": 200,
    "layout": "fitColumns",
@@ -39,6 +39,49 @@ Enables to present, update &amp; query tables on the dashboard UI, using the pop
    ]
 }</code></pre>
 	<p>If left empty, the node will load without creating a table (the table can be created later in runtime using the <code>tbCreateTable</code> command).</p></dd>
+
+    <dt class="optional">Custom Functions <span class="property-type">text</span></dt>
+    <dd>Optional: custom expressions to be set inside Tabulator APIs (for conditional formatting, sorting, filtering, grouping etc.). Each function should be in the format <code>function <i>funcName</i>(<i>param1,param2,...</i>){<i>function body</i>}</code>. For example:
+	<pre><code>function AddCelsius (cell) {return cell.getValue() + (cell.getValue()!=='' ? '°C' : '')}
+function func2 (...) {...}
+// etc.</code></pre>
+
+	The functions definition should follow the prototype expected by their respective Tabulator API, and their names are case-sensitive. To specify a function in the table configuration, it should be prefixed by the special token <code><b>@F:</b></code>.Following is an example of setting a conditional formatter in a column:
+	<p><br>Function definition in <b><i>Custom Functions</i></b>:
+	<pre><code>function ageColor (cell,params) {
+   if (cell.getValue() &LT; params.minAge)
+      cell.getElement().style.color='red';
+   return cell.getValue()
+}</code></pre>
+
+	Reference to the function in the <b>Table configuration</b>:<pre><code>"columns": [
+      {"title":"Age", "field":"age", "formatter":"<span style='color:#8B0000'>@F:ageColor</span>",
+         "formatterParams":{"minAge": 18}
+      },
+]</code></pre></p>
+	<p>In the same manner, functions can also be specified in (relevant) <b>Table command</b> arguments. For example:
+	<pre><code>msg.tbCmd = "setSort";
+msg.tbArgs = [
+   "@F:mySortFunction",
+];</code></pre></p></li>
+
+	<p><b><u>Notes</u></b>:
+	<ul>
+	<li>The keyword <code>function</code> is reserved for declaring the function. Do not specify it anywhere else in the function body, not even in a comment</li>
+	<li>The same function can be reused in multiple places</li>
+	<li>It is also possible to define unnamed (inline) functions directly inside table arguments, in the format <code>@F:(<i>param1,param2,...</i>)=>{<i>function body</i>}</code>. For example:
+	<pre><code>msg.tbCmd = "setFilter";
+msg.tbArgs = [
+   "@F:(rowData,params)=&GT;{return rowData.age &GT; params.minAge}",
+   {"minAge": msg.age}
+];</code></pre></li>
+
+	<li>During development or troubleshooting, it is advisable to open the client browser's console to view syntax errors & exceptions.
+	You can also use an online JS tester (such as <a href="https://www.mycompiler.io/new/nodejs">myCompiler</a>) to test &amp; validate your functions.
+	</ul></dd>
+
+    <dt>Allow functions in messages <span class="property-type">checkbox</span></dt>
+    <dd>Security measure for protection against malicious runtime code injection. When unchecked, runtime messages that include function definitions are blocked, and only references to pre-configured functions (in the node's <i><b>Custom Functions</b></i>) are allowed.</dd>
 
     <dt class="optional">Max Width <span class="property-type">string</span></dt>
     <dd>Sets the maximum visible width of the table (in addition to max height which is part of the table configuration object). If the table width or height exceeds the visible area, scrolling bars will appear. The width should be provided in CSS style format, e.g. <code>500px</code> (pixels), <code>100em</code> (font-size), etc.</dd>
@@ -132,13 +175,20 @@ msg.tbArgs = [
 
 <p><u><b>Notes</b>:</u>:
 <ul>
-<li>The <code>msg.tbArgs</code> property <u><b>**must always be an array**</b></u>. A single argument must still be provided as an array of one element (even if this element is an array by itself), for example:
+<li>The <code>msg.tbArgs</code> property <u><b>**must always be an array**</b></u>. A single argument must still be provided as an array with one element (even if this element is an array by itself), for example:
 <pre><code>msg.tbCmd  = "updateData";
 msg.tbArgs = [
    [
       {id:1, name:"bob"}
    ]
-];</code></pre>
+];</code></pre></li>
+<li>For any Tabulator API which expects 'function' arguments, You can specify <b><i>Expressions</i></b> (via their prefixed name), taken from the table's <b><i>Custom Expressions</i></b> list. For example:
+<pre><code>tbCmd  = setFilter;
+tbArgs = [
+    @F:myFilterFunction,
+    {height:3}
+  ];
+</code></pre></li>
 <li>The returned error messages are as-reported by Tabulator. In some cases, Tabulator ignores invalid API calls without returning an error, or returns an error upon partial-success (for example: a data update command which includes non-existing rows, will update the valid rows but still return an error</li>
 </ul>
 </p>
@@ -148,10 +198,16 @@ msg.tbArgs = [
 <ul>
 <li><code>tbCreateTable</code><br>
 	<p>Creates a new table, after destroying the previous table (if existed).</p>
-	<p>Arguments: <code>tbInitObj</code><br>
-	Table configuration object, as in the <code>Initial Table Configuration</code> configuration property (described in <a href="https://www.tabulator.info/docs/6.2/quickstart#setup">Tabulator Setup</a>).</p>
+	<p>Arguments:
+	<ul>
+	<li><code>tbInitObj</code><br>
+	Table configuration object, with the same structure as the node's <code>Initial Table Configuration</code> (described in <a href="https://www.tabulator.info/docs/6.3/quickstart#setup">Tabulator Setup</a>).</li>
+	<li><code>tbFuncs</code><br>
+	Optional string with definition of <code>Custom Functions</code>, same as in the node's table configuration</li>
+	</ul></p>
 	<p>Returns a success string in <code>payload</code> once table is created and ready, or an <code>error</code> property upon failure.</p>
-	<p><u><b>Note</b></u>: when creating a table with <code>tbCreateTable</code> (in <i><b>Shared</b></i> mode), the new table configuration is cached in the datastore, and overrides the node's initial table configuration  (until next Node-RED restart).</p></li>
+	<p><u><b>Note</b></u>: when creating a table with <code>tbCreateTable</code> (in <i><b>Shared</b></i> mode), the new table configuration is cached in the datastore, and overrides the node's initial table configuration & custom functions (until next Node-RED restart).</p>
+	</li>
 
 <li><code>tbDestroyTable</code><br>
 	Destroys the existing table.<br>
@@ -199,22 +255,26 @@ msg.tbScope = {};                             // affects the whole table</code><
 	Arguments:
 	<ul>
 		<li><code>tbFields</code><br>
-		A field name, or array of field names, to group the table by. Omitting this argument or providing an empty string will clear the current grouping<br></li>
+		A field name, or array of field names, by which to group the table. Omitting this argument or providing an empty string will clear the current grouping<br></li>
+
 		<li><code>tbGroupHeader</code><br>
-		A formatting string which determines the appearance of the group header. It can include 3 pre-defined tokens:
+		Header-formatting function (or array of functions), which can be either:
 		<ul>
-		<li><code>$field</code> - the name of the grouping field</li>
-		<li><code>$value</code> - the grouping value of the current group</li>
-		<li><code>$count</code> - the number of rows in the group</li>
-		</ul>
-		<p>for example:
+		<li>Reference to a function from the node's <b>Custom Functions</b> list (prefixed by <code>@F:</code>)</li>
+		<li>Unnamed inline function (prefixed by <code>@F:</code>)</li>
+		<li>A formatting string, which can include 3 pre-defined tokens:
+			<ul>
+			<li><code>$field</code> - the name of the grouping field</li>
+			<li><code>$value</code> - the grouping value of the current group</li>
+			<li><code>$count</code> - the number of rows in the group</li>
+			</ul>
+		<p>For example:
 		<pre><code>msg.tbFields = "name"
 msg.tbGroupHeader = "$field=$value, ($count items)"</code></pre>
 		The group header will then look like: <b>name=John, (5 items)</b></p>
-	
-		<p>It is possible to further customize the group header, by including CSS styling. For example:
-		<pre><code>msg.tbGroupHeader = "$field=&LT;span style="color:red"&GT;$value&LT;/span&GT;, (&LT;b&GT;$count&LT;/b&GT; items)"</code></pre></p>
-	</ul>	</li>
+		<p>The formatting string can be further customized by CSS styling. For example:
+		<pre><code>msg.tbGroupHeader="$field=&LT;span style="color:red"&GT;$value&LT;/span&GT;, (&LT;b&GT;$count&LT;/b&GT; items)"</code></pre></p></li>
+	</ul>
 </li>
 </ul>
 
