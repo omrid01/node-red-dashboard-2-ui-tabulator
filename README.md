@@ -54,12 +54,14 @@ msg.tbArgs = [ "age", ">", 12 ];
 The node configuration properties (in the editor):
 * **Name, Group, Size**: - same as in all dashboard 2.0 nodes
 * **Initial Table Configuration**: JSON object with all table & column definitions, and (optional) initial data
-* **Max Width**: sets the visible width of the table
+* **Custom Functions**: logical expressions for custom or dynamic table settings, e.g. conditional formatting, user-defined filters/validators etc.
+* **Allow functions in messages**: (Y/N) - security option to block function injection in runtime 
+* **Max Width**: sets the maximum visible width of the table
 * **Notifications**: selection of table events which trigger notification messages
 * **Multi-user** mode: (Y/N)
 * **Row-Id validation/duplication** check (Y/N)
 * **CSS theme**: selection of an optional tabulator CSS Stylesheet (e.g. **_Midnight_**, **_Modern_** etc.)
-* **DIV Override**: optional: enables to specify a specific HTML DIV Id in which the table will be created, overriding the default DIV, auto-allocated by the Vue framework
+* **DIV Override**: optional: enables to specify the HTML DIV Id in which the table will be created, overriding the default auto-allocated DIV
 
 #### Architectural Concepts in Multi-Client Environment
 Tables are created as **_widgets_** on the client (browser) page. Hence, in case of multiple dashboard clients, a single **_ui-tabulator_** node is associated to multiple table widgets. Per Node-RED's framework, every message sent to a **_ui-tabulator_** node in a flow, is replicated to all of its widgets. If the table object responds, the flow will receive multiple, identical responses (one per client). To enable a **_Shared_** mode, where all table widgets are synchronized and have a common data image, we do the following:

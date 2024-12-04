@@ -820,8 +820,10 @@ function applyStyles(element,styles)
 	// example: cellObj.getElement().style.backgroundColor = "cyan";
 	for (const prop in styles)
 	{
-		if (element.style.hasOwnProperty(prop))
+		if (prop in element.style)
 			element.style[prop] = styles[prop];
+		else
+			console.warn("Invalid style "+prop);
 	}		
 }
 // ********************************************************************************************************************
