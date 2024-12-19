@@ -31,8 +31,18 @@ module.exports = function (RED) {
             onAction: true,
             onInput: function (msg, send, done) {  // the *input* message coming into the server node input port
 				debugLog('onInput: '+node.id,msg);
-				
-                // forward it as-is to any connected nodes in Node-RED  - ** deprecated **
+
+				// check if there are connected clients
+				const conns = base.uiShared?.connections;
+				if (!conns || Object.keys(conns).length === 0)
+				{
+					const errMsg = "No connected clients - message to ui-tabulator ignored";
+					console.warn(errMsg);
+					msg.error = errMsg;
+					node.send(msg);
+				}
+
+                // forward it as-is to any connected nodes in Node-RED  - ** deprecated  feature **
                 //if (config.passthru)
 				//	send(msg);
             },

@@ -1170,7 +1170,7 @@ function setEventNotifications($widgetScope)
 		//-------------------------------------------------------
 		// Table events
 		//-------------------------------------------------------
-			case "tableBuilt":	// Listener is set automatically during createTable(). If also explicitly set in the events list, it will also issue a notification from there
+			case "tableBuilt":	// Listener is set automatically during createTable(). If also explicitly requested in the events list, it will issue the notification from there
 				break;
 			case "tableDestroyed":  // Sent *after* table is destroyed
 				$widgetScope.tbl.on(ev, function(){
@@ -1181,7 +1181,7 @@ function setEventNotifications($widgetScope)
 			case "dataChanged":
 				$widgetScope.tbl.on(ev, function(data){
 					let eventMsg = new tbEventMsg(ev,$widgetScope.$socket.id);
-					evMsg.payload = data;
+					eventMsg.payload = data;
 					$widgetScope.send(eventMsg);
 				});
 				break;
