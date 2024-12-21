@@ -658,9 +658,9 @@ return new Promise((resolve, reject) => {
 // ********************************************************************************************************************
 function initialTableLoad(dsImage,$widgetScope)
 {
-	const dsDummyImage = "dummyDSImage";	// workaround: server does not send this event if no data in datastore, so we force dummy data
+	// dsDummyImage = {ds:"Dummy"} - workaround: server does not send this event if no data in datastore, so we force dummy data
 
-	if ($widgetScope.props.multiUser || !dsImage || dsImage === "dummyDSImage")
+	if ($widgetScope.props.multiUser || !dsImage || dsImage.ds === "Dummy")
 	{
 		if ($widgetScope.origTblConfig)
 		{

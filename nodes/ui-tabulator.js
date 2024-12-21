@@ -5,7 +5,7 @@ module.exports = function (RED) {
         RED.nodes.createNode(this, config)
 
         const node = this;
-		const dsDummyImage = "dummyDSImage";
+		const dsDummyImage = {ds:"Dummy"};
 
 		// Set debug log policy
 		const e = process.env.TBDEBUG;
@@ -110,6 +110,7 @@ module.exports = function (RED) {
 							if (!node.multiUser)
 							{
 								debugLog("Saving to datastore: node.id="+node.id,msg);
+								base.stores.data.clear(node.id);
 								base.stores.data.save(base, node, msg.dsImage);
 							}
 
@@ -132,6 +133,7 @@ module.exports = function (RED) {
 								debugLog("config:", dsImage.config);
 								debugLog("data:", dsImage.data ? dsImage.data.length+' rows' : null);
 
+								base.stores.data.clear(node.id);
 								base.stores.data.save(base, node, dsImage);
 							}
 							break;
@@ -148,10 +150,8 @@ module.exports = function (RED) {
 							if (!node.multiUser && !inMap(node.lastClientMsgs,msg.clientMsgId,""))
 							{
 								debugLog("Setting dummy to datastore: node.id="+node.id);
+								base.stores.data.clear(node.id);
 								base.stores.data.save(base, node, dsDummyImage);
-
-								// base.stores.data.clear(id);
-								// debugLog("Datastore cleared: node.id="+node.id);
 							}
 							break;
 
@@ -168,13 +168,12 @@ module.exports = function (RED) {
 		//--------------------------------------------------------
 		//Initialize Datastore
 		//--------------------------------------------------------
-		if (node.multiUser)
-			base.stores.data.clear(node.id);
-		else
-		{
-			// Set a "dummy" object in the data store to ensure 'widget-load' notification (update: NR bug has been fixed, will discard this in the future)
+		base.stores.data.clear(node.id);
+
+		// Set a "dummy" object in the data store to ensure 'widget-load' notification (update: NR bug has been fixed, will discard this in the future)
+		if (!node.multiUser)
 			base.stores.data.save(base, node, dsDummyImage);
-		}
+
 		//--------------------------------------------------------
 		// inform the dashboard UI that we are adding this node
 		//--------------------------------------------------------
