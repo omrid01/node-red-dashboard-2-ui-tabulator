@@ -1201,6 +1201,9 @@ function setEventNotifications($widgetScope)
 		//-------------------------------------------------------
 		// Row events
 		//-------------------------------------------------------
+			case "rowMoving":
+			case "rowMoveCancelled":
+			case "rowMoved":
 			case "rowClick":
 			case "rowDblClick":
 			case "rowTap":
